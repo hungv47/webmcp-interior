@@ -37,17 +37,22 @@ let versionBBuildingId: string | null = null
 function cloneApartmentForVersionB(originalBuildingId: string, packageItems: PackageItem[]): {
   buildingId: string
   clonedNodes: number
+  lampsPlaced: number
 } | null {
   const scene = useScene.getState()
   const originalBuilding = scene.nodes[originalBuildingId as AnyNodeId]
   
   if (!originalBuilding || originalBuilding.type !== 'building') {
+    console.error('[Room vibe] Original building not found or invalid type')
     return null
   }
 
   const buildingNode = originalBuilding as BuildingNode
   const siteId = buildingNode.parentId
-  if (!siteId) return null
+  if (!siteId) {
+    console.error('[Room vibe] Building has no parent site')
+    return null
+  }
 
   const originalPosition = buildingNode.position || [0, 0, 0]
   const offsetX = 15
@@ -80,6 +85,11 @@ function cloneApartmentForVersionB(originalBuildingId: string, packageItems: Pac
     rootNodeIds: [originalBuildingId as AnyNodeId],
   })
 
+  if (Object.keys(clonedGraph.nodes).length === 0) {
+    console.error('[Room vibe] cloneSceneGraph returned 0 nodes')
+    return null
+  }
+
   const newBuildingId = clonedGraph.rootNodeIds[0]
   const newBuildingNode = clonedGraph.nodes[newBuildingId] as BuildingNode
 
@@ -109,13 +119,18 @@ function cloneApartmentForVersionB(originalBuildingId: string, packageItems: Pac
     .filter((n) => n && n.type === 'level' && (n as LevelNode).parentId === newBuildingId)
     .sort((a, b) => ((a as LevelNode).level || 0) - ((b as LevelNode).level || 0))[0]
 
+  let lampsPlaced = 0
+
   if (firstLevel) {
     for (const pkgItem of packageItems) {
       const catalogItem = CATALOG_ITEMS.find((item) => item.id === pkgItem.catalogId)
-      if (!catalogItem) continue
+      if (!catalogItem) {
+        console.warn(`[Room vibe] Catalog item not found: ${pkgItem.catalogId}`)
+        continue
+      }
 
       try {
-        const itemId = scene.createNode(
+        scene.createNode(
           ItemNode.parse({
             position: pkgItem.position,
             rotation: pkgItem.rotation,
@@ -134,10 +149,13 @@ function cloneApartmentForVersionB(originalBuildingId: string, packageItems: Pac
           }),
           firstLevel.id as AnyNodeId,
         )
+        lampsPlaced++
       } catch (error) {
-        console.warn(`[Room vibe] Failed to place item ${pkgItem.catalogId}:`, error)
+        console.error(`[Room vibe] Failed to place item ${pkgItem.catalogId}:`, error)
       }
     }
+  } else {
+    console.warn('[Room vibe] No level found in cloned building for lamp placement')
   }
 
   scene.revision++
@@ -145,6 +163,7 @@ function cloneApartmentForVersionB(originalBuildingId: string, packageItems: Pac
   return {
     buildingId: newBuildingId as string,
     clonedNodes: Object.keys(clonedGraph.nodes).length,
+    lampsPlaced,
   }
 }
 
@@ -222,6 +241,7 @@ export function WebMCPTools() {
             },
             required: ['packageId'],
           },
+          readOnlyHint: true,
           execute: async (args: Record<string, unknown>) => {
             const scene = useScene.getState()
             const packageId = args.packageId as string
@@ -268,7 +288,13 @@ export function WebMCPTools() {
               return { success: false, error: `Package ${packageId} not found` }
             }
 
-            const confirmed = await showConfirmationModal(packageId, pkg.name)
+            let confirmed: boolean
+            try {
+              confirmed = await showConfirmationModal(packageId, pkg.name)
+            } catch (error) {
+              console.error('[Room vibe] Modal failed:', error)
+              return { success: false, error: 'Modal timeout or failure - no human response after 60 seconds' }
+            }
 
             if (!confirmed) {
               const scene = useScene.getState()
@@ -304,7 +330,15 @@ export function WebMCPTools() {
             const result = cloneApartmentForVersionB(firstBuilding.id, pkg.items)
 
             if (!result) {
-              return { success: false, error: 'Failed to create Version B' }
+              return { success: false, error: 'Failed to create Version B - cloning returned null' }
+            }
+
+            if (result.clonedNodes === 0) {
+              return { success: false, error: 'Failed to create Version B - 0 nodes cloned' }
+            }
+
+            if (result.lampsPlaced === 0) {
+              console.warn('[Room vibe] Version B created but 0 lamps placed')
             }
 
             versionBBuildingId = result.buildingId
@@ -332,6 +366,7 @@ export function WebMCPTools() {
               revisionAfter,
               versionBBuildingId: result.buildingId,
               nodesCloned: result.clonedNodes,
+              lampsPlaced: result.lampsPlaced,
               message:
                 'Version B created successfully as a complete apartment copy offset in +X with Warm Dusk lighting. Use scene.focus_comparison to view both versions.',
             }

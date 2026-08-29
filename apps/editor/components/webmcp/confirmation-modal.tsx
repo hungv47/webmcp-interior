@@ -58,10 +58,24 @@ export function ConfirmationModal({ packageId, packageName, onConfirm, onRefuse 
 }
 
 let modalResolver: ((confirmed: boolean) => void) | null = null
+let modalTimeout: NodeJS.Timeout | null = null
 
 export function showConfirmationModal(packageId: string, packageName: string): Promise<boolean> {
   return new Promise((resolve) => {
+    if (modalTimeout) {
+      clearTimeout(modalTimeout)
+    }
+
     modalResolver = resolve
+
+    modalTimeout = setTimeout(() => {
+      if (modalResolver) {
+        console.error('[Room vibe] Modal timeout - no response after 60s')
+        modalResolver(false)
+        modalResolver = null
+      }
+    }, 60000)
+
     const event = new CustomEvent('webmcp:show-modal', {
       detail: { packageId, packageName },
     })
@@ -70,6 +84,11 @@ export function showConfirmationModal(packageId: string, packageName: string): P
 }
 
 export function resolveModal(confirmed: boolean) {
+  if (modalTimeout) {
+    clearTimeout(modalTimeout)
+    modalTimeout = null
+  }
+
   if (modalResolver) {
     modalResolver(confirmed)
     modalResolver = null

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Copy, Check } from 'lucide-react'
+import { Minimize2, Copy, Check } from 'lucide-react'
 
 export interface SceneReceipt {
   packageId: string
@@ -16,14 +16,12 @@ export interface SceneReceipt {
 
 interface SceneReceiptCardProps {
   receipt: SceneReceipt
-  onClose?: () => void
+  onCollapse?: () => void
 }
 
-export function SceneReceiptCard({ receipt, onClose }: SceneReceiptCardProps) {
-  const [isVisible, setIsVisible] = useState(true)
+export function SceneReceiptCard({ receipt, onCollapse }: SceneReceiptCardProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false)
   const [copied, setCopied] = useState(false)
-
-  if (!isVisible) return null
 
   const statusColor =
     receipt.confirmedBy === 'human'
@@ -57,6 +55,27 @@ Agent proposed: Yes`
     }
   }
 
+  const handleCollapse = () => {
+    setIsCollapsed(true)
+    if (onCollapse) {
+      onCollapse()
+    }
+  }
+
+  if (isCollapsed) {
+    return (
+      <div className="pointer-events-auto fixed bottom-4 left-4 z-50 rounded-lg border border-white/10 bg-zinc-900/95 px-3 py-2 shadow-xl backdrop-blur">
+        <button
+          className="text-xs text-white/60 hover:text-white/90"
+          onClick={() => setIsCollapsed(false)}
+          type="button"
+        >
+          Scene Receipt (tap to expand)
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="pointer-events-auto fixed bottom-4 left-4 z-50 w-80 rounded-lg border border-white/10 bg-zinc-900/95 p-4 shadow-2xl backdrop-blur">
       <div className="mb-3 flex items-start justify-between">
@@ -73,19 +92,14 @@ Agent proposed: Yes`
           >
             {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
           </button>
-          {onClose && (
-            <button
-              className="rounded p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white/70"
-              onClick={() => {
-                setIsVisible(false)
-                onClose()
-              }}
-              title="Close"
-              type="button"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
+          <button
+            className="rounded p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white/70"
+            onClick={handleCollapse}
+            title="Collapse"
+            type="button"
+          >
+            <Minimize2 className="h-3.5 w-3.5" />
+          </button>
         </div>
       </div>
 
