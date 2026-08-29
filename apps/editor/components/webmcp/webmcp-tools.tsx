@@ -1,13 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useScene } from '@aedifex/editor'
-import { PACKAGES, validatePackage } from '@/lib/packages'
+import { emitter, useScene, type AnyNodeId, ItemNode, BuildingNode, LevelNode } from '@aedifex/core'
+import { PACKAGES, validatePackage, type PackageItem } from '@/lib/packages'
 import { getSceneReceipt, setSceneReceipt, type SceneReceipt } from './scene-receipt'
 import { showConfirmationModal } from './confirmation-modal'
+import { CATALOG_ITEMS } from '@aedifex/editor/components/ui/item-catalog/catalog-items'
 
 declare global {
-  interface Window {
+  interface Document {
     modelContext?: {
       registerTool(config: {
         name: string
@@ -20,19 +21,99 @@ declare global {
   }
 }
 
+let versionBBuildingId: string | null = null
+
+function cloneSceneForVersionB(originalBuildingId: string, packageItems: PackageItem[]): {
+  buildingId: string
+  levelId: string
+  itemIds: string[]
+} | null {
+  const scene = useScene.getState()
+  const originalBuilding = scene.nodes[originalBuildingId as AnyNodeId]
+  
+  if (!originalBuilding || originalBuilding.type !== 'building') {
+    return null
+  }
+
+  const buildingNode = originalBuilding as BuildingNode
+  const siteId = buildingNode.parentId
+  if (!siteId) return null
+
+  const originalPosition = buildingNode.position || [0, 0, 0]
+  const offsetX = 15
+
+  const newBuildingId = scene.createNode(
+    BuildingNode.parse({
+      position: [originalPosition[0] + offsetX, originalPosition[1], originalPosition[2]],
+      rotation: buildingNode.rotation || [0, 0, 0],
+    }),
+    siteId as AnyNodeId,
+  )
+
+  const originalLevels = buildingNode.children
+    .map((childId) => scene.nodes[childId as AnyNodeId])
+    .filter((node): node is LevelNode => node?.type === 'level')
+
+  if (originalLevels.length === 0) {
+    return null
+  }
+
+  const groundLevel = originalLevels.find((level) => level.level === 0) || originalLevels[0]
+  if (!groundLevel) return null
+
+  const newLevelId = scene.createNode(
+    LevelNode.parse({
+      level: groundLevel.level,
+      height: groundLevel.height,
+    }),
+    newBuildingId as AnyNodeId,
+  )
+
+  const itemIds: string[] = []
+  for (const pkgItem of packageItems) {
+    const catalogItem = CATALOG_ITEMS.find((item) => item.id === pkgItem.catalogId)
+    if (!catalogItem) continue
+
+    const itemId = scene.createNode(
+      ItemNode.parse({
+        position: pkgItem.position,
+        rotation: pkgItem.rotation,
+        asset: {
+          id: catalogItem.id,
+          name: catalogItem.name,
+          category: catalogItem.category,
+          thumbnail: catalogItem.thumbnail,
+          src: catalogItem.src,
+          floorPlanUrl: catalogItem.floorPlanUrl,
+          dimensions: catalogItem.dimensions,
+          offset: catalogItem.offset || [0, 0, 0],
+          rotation: catalogItem.rotation || [0, 0, 0],
+          scale: catalogItem.scale || [1, 1, 1],
+        },
+      }),
+      newLevelId as AnyNodeId,
+    )
+    itemIds.push(itemId as string)
+  }
+
+  return {
+    buildingId: newBuildingId as string,
+    levelId: newLevelId as string,
+    itemIds,
+  }
+}
+
 export function WebMCPTools() {
-  const scene = useScene()
   const [isRegistered, setIsRegistered] = useState(false)
 
   useEffect(() => {
-    if (!window.modelContext || isRegistered) return
+    if (!document.modelContext || isRegistered) return
 
     const urlParams = new URLSearchParams(window.location.search)
     if (urlParams.get('webmcp') !== '1') return
 
     try {
-      // scene.inspect
-      window.modelContext.registerTool({
+      document.modelContext.registerTool({
         name: 'scene.inspect',
         description:
           'Inspect the current 3D scene: floor plan, zones, furniture items, lights, selection state, and current revision number. Start with this tool to understand what is already in Version A.',
@@ -43,6 +124,7 @@ export function WebMCPTools() {
         },
         readOnlyHint: true,
         handler: async () => {
+          const scene = useScene.getState()
           const nodes = scene.nodes
           const zones = Object.values(nodes).filter((n) => n && n.type === 'zone')
           const items = Object.values(nodes).filter((n) => n && n.type === 'item')
@@ -68,8 +150,7 @@ export function WebMCPTools() {
         },
       })
 
-      // scene.validate_package
-      window.modelContext.registerTool({
+      document.modelContext.registerTool({
         name: 'scene.validate_package',
         description:
           'Validate a named furniture/lighting package against the current scene. Returns compatibility status without making changes. Use this before applying a package.',
@@ -84,6 +165,7 @@ export function WebMCPTools() {
           required: ['packageId'],
         },
         handler: async (args: Record<string, unknown>) => {
+          const scene = useScene.getState()
           const packageId = args.packageId as string
           const validation = validatePackage(packageId, scene)
 
@@ -106,8 +188,7 @@ export function WebMCPTools() {
         },
       })
 
-      // scene.apply_package
-      window.modelContext.registerTool({
+      document.modelContext.registerTool({
         name: 'scene.apply_package',
         description:
           'Apply a validated package to create Version B as a sibling building on the ground, offset in +X. This tool requires human confirmation via a page modal. Version A remains untouched. Supports one native Undo.',
@@ -132,6 +213,7 @@ export function WebMCPTools() {
           const confirmed = await showConfirmationModal(packageId, pkg.name)
 
           if (!confirmed) {
+            const scene = useScene.getState()
             const refusedReceipt: SceneReceipt = {
               packageId: pkg.id,
               packageName: pkg.name,
@@ -151,14 +233,32 @@ export function WebMCPTools() {
             }
           }
 
+          const scene = useScene.getState()
           const revisionBefore = scene.revision
 
-          // Create confirmed receipt
+          const buildings = Object.values(scene.nodes).filter((n) => n && n.type === 'building')
+          const firstBuilding = buildings[0]
+
+          if (!firstBuilding) {
+            return { success: false, error: 'No building found in scene' }
+          }
+
+          const result = cloneSceneForVersionB(firstBuilding.id, pkg.items)
+
+          if (!result) {
+            return { success: false, error: 'Failed to create Version B' }
+          }
+
+          versionBBuildingId = result.buildingId
+
+          const sceneAfter = useScene.getState()
+          const revisionAfter = sceneAfter.revision
+
           const confirmedReceipt: SceneReceipt = {
             packageId: pkg.id,
             packageName: pkg.name,
             revisionBefore,
-            revisionAfter: scene.revision + 1,
+            revisionAfter,
             toolsUsed: ['scene.apply_package'],
             timestamp: new Date().toISOString(),
             agentProposed: true,
@@ -171,14 +271,16 @@ export function WebMCPTools() {
             packageId: pkg.id,
             packageName: pkg.name,
             revisionBefore,
-            revisionAfter: scene.revision + 1,
-            message: 'Version B created successfully. Use scene.focus_comparison to view.',
+            revisionAfter,
+            versionBBuildingId: result.buildingId,
+            itemsPlaced: result.itemIds.length,
+            message:
+              'Version B created successfully as a sibling building offset in +X. Use scene.focus_comparison to view.',
           }
         },
       })
 
-      // scene.focus_comparison
-      window.modelContext.registerTool({
+      document.modelContext.registerTool({
         name: 'scene.focus_comparison',
         description:
           'Point the camera at Version A or Version B to help the human compare. Does not walk. Does not buy furniture.',
@@ -195,15 +297,42 @@ export function WebMCPTools() {
         },
         handler: async (args: Record<string, unknown>) => {
           const version = args.version as 'A' | 'B'
-          return {
-            focused: version,
-            message: `Camera would focus on Version ${version}. Implementation requires camera control integration.`,
+          const scene = useScene.getState()
+
+          const buildings = Object.values(scene.nodes).filter(
+            (n) => n && n.type === 'building',
+          ) as BuildingNode[]
+
+          if (version === 'A') {
+            const firstBuilding = buildings[0]
+            if (firstBuilding) {
+              emitter.emit('camera-controls:view', { nodeId: firstBuilding.id })
+              return {
+                focused: 'A',
+                buildingId: firstBuilding.id,
+                message: 'Camera focused on Version A (original building)',
+              }
+            }
+            return { focused: 'A', error: 'Version A building not found' }
           }
+
+          if (versionBBuildingId) {
+            const buildingB = scene.nodes[versionBBuildingId as AnyNodeId]
+            if (buildingB && buildingB.type === 'building') {
+              emitter.emit('camera-controls:view', { nodeId: versionBBuildingId as AnyNodeId })
+              return {
+                focused: 'B',
+                buildingId: versionBBuildingId,
+                message: 'Camera focused on Version B (new building with package)',
+              }
+            }
+          }
+
+          return { focused: 'B', error: 'Version B not created yet or was undone' }
         },
       })
 
-      // scene.session_state
-      window.modelContext.registerTool({
+      document.modelContext.registerTool({
         name: 'scene.session_state',
         description:
           'Get current session state: who may write, what is stale, and checkout capability. canCheckout is always false.',
@@ -214,6 +343,7 @@ export function WebMCPTools() {
         },
         readOnlyHint: true,
         handler: async () => {
+          const scene = useScene.getState()
           return {
             canWrite: true,
             canCheckout: false,
@@ -224,8 +354,7 @@ export function WebMCPTools() {
         },
       })
 
-      // scene.read_receipt
-      window.modelContext.registerTool({
+      document.modelContext.registerTool({
         name: 'scene.read_receipt',
         description:
           'Read the last Scene Receipt if one exists. Returns package info, revisions, timestamp, and confirmation status.',
@@ -245,11 +374,11 @@ export function WebMCPTools() {
       })
 
       setIsRegistered(true)
-      console.log('[WebMCP] Registered 6 scene tools')
+      console.log('[WebMCP] Registered 6 scene tools on document.modelContext')
     } catch (error) {
       console.error('[WebMCP] Failed to register tools:', error)
     }
-  }, [isRegistered, scene])
+  }, [isRegistered])
 
   if (!isRegistered) return null
 

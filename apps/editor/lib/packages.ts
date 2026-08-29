@@ -1,17 +1,16 @@
 import type { AnyNode } from '@aedifex/core/schema'
 
+export interface PackageItem {
+  catalogId: string
+  position: [number, number, number]
+  rotation: [number, number, number]
+}
+
 export interface Package {
   id: string
   name: string
   description: string
-  items: Array<{
-    type: 'item'
-    catalogId: string
-    position: [number, number, number]
-    rotation: [number, number, number]
-    scale?: [number, number, number]
-    metadata?: Record<string, unknown>
-  }>
+  items: PackageItem[]
 }
 
 export const PACKAGES: Record<string, Package> = {
@@ -22,26 +21,22 @@ export const PACKAGES: Record<string, Package> = {
       'A warm, inviting lighting package with floor lamps and ambient lights for evening atmosphere',
     items: [
       {
-        type: 'item',
-        catalogId: 'floor_lamp_01',
+        catalogId: 'floor-lamp',
         position: [-2, 0, 2],
         rotation: [0, 0, 0],
       },
       {
-        type: 'item',
-        catalogId: 'floor_lamp_01',
+        catalogId: 'floor-lamp',
         position: [2, 0, 2],
         rotation: [0, Math.PI, 0],
       },
       {
-        type: 'item',
-        catalogId: 'table_lamp_01',
+        catalogId: 'table-lamp',
         position: [-3, 0.7, -2],
         rotation: [0, 0, 0],
       },
       {
-        type: 'item',
-        catalogId: 'pendant_light_01',
+        catalogId: 'ceiling-lamp',
         position: [0, 0, 1],
         rotation: [0, 0, 0],
       },
