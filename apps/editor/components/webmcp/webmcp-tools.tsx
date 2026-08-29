@@ -250,6 +250,7 @@ export function WebMCPTools() {
             const items = Object.values(nodes).filter((n) => n && n.type === 'item')
             const walls = Object.values(nodes).filter((n) => n && n.type === 'wall')
             const levels = Object.values(nodes).filter((n) => n && n.type === 'level')
+            const revision = useScene.temporal.getState().pastStates.length
 
             return {
               zones: zones.map((z) => ({
@@ -264,7 +265,7 @@ export function WebMCPTools() {
               })),
               walls: walls.length,
               levels: levels.length,
-              revision: scene.revision,
+              revision,
               totalNodes: Object.keys(nodes).length,
             }
           },
@@ -342,11 +343,11 @@ export function WebMCPTools() {
             }
 
             if (!confirmed) {
-              const scene = useScene.getState()
+              const revisionBefore = useScene.temporal.getState().pastStates.length
               const refusedReceipt: SceneReceipt = {
                 packageId: pkg.id,
                 packageName: pkg.name,
-                revisionBefore: scene.revision,
+                revisionBefore,
                 revisionAfter: null,
                 toolsUsed: ['scene.apply_package'],
                 timestamp: new Date().toISOString(),
@@ -362,9 +363,9 @@ export function WebMCPTools() {
               }
             }
 
-            const scene = useScene.getState()
-            const revisionBefore = scene.revision
+            const revisionBefore = useScene.temporal.getState().pastStates.length
 
+            const scene = useScene.getState()
             const buildings = Object.values(scene.nodes).filter((n) => n && n.type === 'building')
             const firstBuilding = buildings[0]
 
@@ -388,8 +389,7 @@ export function WebMCPTools() {
 
             versionBBuildingId = result.buildingId
 
-            const sceneAfter = useScene.getState()
-            const revisionAfter = sceneAfter.revision
+            const revisionAfter = useScene.temporal.getState().pastStates.length
 
             const confirmedReceipt: SceneReceipt = {
               packageId: pkg.id,
@@ -483,11 +483,11 @@ export function WebMCPTools() {
             readOnlyHint: true,
           },
           execute: async () => {
-            const scene = useScene.getState()
+            const revision = useScene.temporal.getState().pastStates.length
             return {
               canWrite: true,
               canCheckout: false,
-              revision: scene.revision,
+              revision,
               staleState: false,
               message: 'Checkout is permanently disabled for this demo',
             }
