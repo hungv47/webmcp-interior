@@ -115,8 +115,9 @@ The 3D apartment is inherited from Aedifex (see [README.aedifex.md](./README.aed
 
 ## WebMCP Notes
 
-- Tools registered on `navigator.modelContext` (fallback to `document.modelContext`)
+- Tools registered on `document.modelContext` (fallback to `navigator.modelContext`, deprecated in Chromium 150)
 - Each tool has `execute` (async), not `handler`
-- Read-only tools have `readOnlyHint: true` at top level, not `annotations.readOnly`
-- Works in ChatGPT in-app browser and Chrome 151+ with `enable-webmcp-testing` flag
+- Read-only tools have `readOnlyHint: true` at top level
+- Works in ChatGPT in-app browser (Sol/Terra) and Chrome 151+ with `enable-webmcp-testing` flag
+- **Note**: Luna model has WebMCP disabled; use Sol or Terra for testing
 - Registration polls/retries up to 5s if context not available on first paint

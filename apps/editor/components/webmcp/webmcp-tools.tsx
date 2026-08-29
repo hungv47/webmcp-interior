@@ -178,7 +178,7 @@ export function WebMCPTools() {
     const tryRegister = () => {
       attemptCount++
 
-      const modelContext = navigator.modelContext || document.modelContext
+      const modelContext = document.modelContext || navigator.modelContext
       if (!modelContext) {
         if (attemptCount < maxAttempts) {
           setTimeout(tryRegister, retryInterval)
@@ -467,7 +467,7 @@ export function WebMCPTools() {
         })
 
         setToolStatus('registered')
-        console.log('[WebMCP] Registered 6 scene tools on', navigator.modelContext ? 'navigator' : 'document', '.modelContext')
+        console.log('[WebMCP] Registered 6 scene tools on', document.modelContext ? 'document' : 'navigator', '.modelContext')
         
         setTimeout(() => {
           setToolStatus('hidden')

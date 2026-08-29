@@ -24,7 +24,7 @@ The 3D apartment is the substrate for the demo. The confirm modal + Scene Receip
 | Tool | Role | Read-Only |
 |---|---|---|
 | `scene.inspect` | Floor plan, items, lights, zones, revision | ✓ |
-| `scene.validate_package` | Check a named package (no write) | |
+| `scene.validate_package` | Check a named package (no write) | ✓ |
 | `scene.apply_package` | Apply package as Version B after human modal | |
 | `scene.focus_comparison` | Point camera at A or B | |
 | `scene.session_state` | Session state, `canCheckout` always false | ✓ |
@@ -48,9 +48,9 @@ The 3D apartment is the substrate for the demo. The confirm modal + Scene Receip
 
 ## WebMCP Implementation
 
-Tools register on **`navigator.modelContext`** (with fallback to `document.modelContext`). Each tool has:
+Tools register on **`document.modelContext`** (with fallback to `navigator.modelContext`). Each tool has:
 - `execute` (async function) — not `handler`
-- `readOnlyHint: true` at top level for read-only tools — not `annotations.readOnly`
+- `readOnlyHint: true` at top level for read-only tools
 
 Visible as **Available site tools** in ChatGPT's in-app browser or Chrome with `chrome://flags/#enable-webmcp-testing`.
 
