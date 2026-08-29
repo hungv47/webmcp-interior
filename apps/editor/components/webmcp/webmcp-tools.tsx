@@ -1,21 +1,36 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { emitter, useScene, type AnyNodeId, ItemNode, BuildingNode, LevelNode } from '@aedifex/core'
+import { emitter, useScene, type AnyNodeId, ItemNode, BuildingNode, LevelNode, WallNode, ZoneNode, cloneSceneGraph } from '@aedifex/core'
 import { PACKAGES, validatePackage, type PackageItem } from '@/lib/packages'
 import { getSceneReceipt, setSceneReceipt, type SceneReceipt } from './scene-receipt'
 import { showConfirmationModal } from './confirmation-modal'
 import { CATALOG_ITEMS } from '@aedifex/editor/components/ui/item-catalog/catalog-items'
 
 declare global {
+  interface Navigator {
+    modelContext?: {
+      registerTool(config: {
+        name: string
+        description: string
+        inputSchema: Record<string, unknown>
+        annotations?: {
+          readOnly?: boolean
+        }
+        execute: (args: Record<string, unknown>) => Promise<unknown>
+      }): void
+    }
+  }
   interface Document {
     modelContext?: {
       registerTool(config: {
         name: string
         description: string
         inputSchema: Record<string, unknown>
-        readOnlyHint?: boolean
-        handler: (args: Record<string, unknown>) => Promise<unknown> | unknown
+        annotations?: {
+          readOnly?: boolean
+        }
+        execute: (args: Record<string, unknown>) => Promise<unknown>
       }): void
     }
   }
@@ -23,10 +38,9 @@ declare global {
 
 let versionBBuildingId: string | null = null
 
-function cloneSceneForVersionB(originalBuildingId: string, packageItems: PackageItem[]): {
+function cloneApartmentForVersionB(originalBuildingId: string, packageItems: PackageItem[]): {
   buildingId: string
-  levelId: string
-  itemIds: string[]
+  clonedNodes: number
 } | null {
   const scene = useScene.getState()
   const originalBuilding = scene.nodes[originalBuildingId as AnyNodeId]
@@ -42,64 +56,105 @@ function cloneSceneForVersionB(originalBuildingId: string, packageItems: Package
   const originalPosition = buildingNode.position || [0, 0, 0]
   const offsetX = 15
 
-  const newBuildingId = scene.createNode(
+  const nodesToClone = [originalBuildingId]
+  const visited = new Set<string>()
+  const queue = [originalBuildingId]
+
+  while (queue.length > 0) {
+    const nodeId = queue.shift()!
+    if (visited.has(nodeId)) continue
+    visited.add(nodeId)
+
+    const node = scene.nodes[nodeId as AnyNodeId]
+    if (!node) continue
+
+    if ('children' in node && Array.isArray(node.children)) {
+      for (const childId of node.children) {
+        if (!visited.has(childId as string)) {
+          nodesToClone.push(childId as string)
+          queue.push(childId as string)
+        }
+      }
+    }
+  }
+
+  const idMap = new Map<string, string>()
+  
+  const clonedBuildingId = scene.createNode(
     BuildingNode.parse({
       position: [originalPosition[0] + offsetX, originalPosition[1], originalPosition[2]],
       rotation: buildingNode.rotation || [0, 0, 0],
     }),
     siteId as AnyNodeId,
   )
+  
+  idMap.set(originalBuildingId, clonedBuildingId as string)
 
-  const originalLevels = buildingNode.children
-    .map((childId) => scene.nodes[childId as AnyNodeId])
-    .filter((node): node is LevelNode => node?.type === 'level')
+  for (const oldId of nodesToClone) {
+    if (oldId === originalBuildingId) continue
+    
+    const oldNode = scene.nodes[oldId as AnyNodeId]
+    if (!oldNode) continue
 
-  if (originalLevels.length === 0) {
-    return null
+    let parentId = ('parentId' in oldNode ? oldNode.parentId : null) as string | null
+    if (parentId && idMap.has(parentId)) {
+      parentId = idMap.get(parentId)!
+    }
+
+    if (!parentId) continue
+
+    const clonedNode = { ...oldNode }
+    
+    if ('children' in clonedNode && Array.isArray(clonedNode.children)) {
+      delete (clonedNode as any).children
+    }
+
+    try {
+      const newId = scene.createNode(clonedNode as any, parentId as AnyNodeId)
+      idMap.set(oldId, newId as string)
+    } catch (error) {
+      console.warn(`Failed to clone node ${oldId}:`, error)
+    }
   }
 
-  const groundLevel = originalLevels.find((level) => level.level === 0) || originalLevels[0]
-  if (!groundLevel) return null
+  const firstLevel = Object.values(scene.nodes)
+    .filter((n) => n && n.type === 'level' && (n as LevelNode).parentId === clonedBuildingId)
+    .sort((a, b) => ((a as LevelNode).level || 0) - ((b as LevelNode).level || 0))[0]
 
-  const newLevelId = scene.createNode(
-    LevelNode.parse({
-      level: groundLevel.level,
-      height: groundLevel.height,
-    }),
-    newBuildingId as AnyNodeId,
-  )
+  if (firstLevel) {
+    for (const pkgItem of packageItems) {
+      const catalogItem = CATALOG_ITEMS.find((item) => item.id === pkgItem.catalogId)
+      if (!catalogItem) continue
 
-  const itemIds: string[] = []
-  for (const pkgItem of packageItems) {
-    const catalogItem = CATALOG_ITEMS.find((item) => item.id === pkgItem.catalogId)
-    if (!catalogItem) continue
-
-    const itemId = scene.createNode(
-      ItemNode.parse({
-        position: pkgItem.position,
-        rotation: pkgItem.rotation,
-        asset: {
-          id: catalogItem.id,
-          name: catalogItem.name,
-          category: catalogItem.category,
-          thumbnail: catalogItem.thumbnail,
-          src: catalogItem.src,
-          floorPlanUrl: catalogItem.floorPlanUrl,
-          dimensions: catalogItem.dimensions,
-          offset: catalogItem.offset || [0, 0, 0],
-          rotation: catalogItem.rotation || [0, 0, 0],
-          scale: catalogItem.scale || [1, 1, 1],
-        },
-      }),
-      newLevelId as AnyNodeId,
-    )
-    itemIds.push(itemId as string)
+      try {
+        scene.createNode(
+          ItemNode.parse({
+            position: pkgItem.position,
+            rotation: pkgItem.rotation,
+            asset: {
+              id: catalogItem.id,
+              name: catalogItem.name,
+              category: catalogItem.category,
+              thumbnail: catalogItem.thumbnail,
+              src: catalogItem.src,
+              floorPlanUrl: catalogItem.floorPlanUrl,
+              dimensions: catalogItem.dimensions,
+              offset: catalogItem.offset || [0, 0, 0],
+              rotation: catalogItem.rotation || [0, 0, 0],
+              scale: catalogItem.scale || [1, 1, 1],
+            },
+          }),
+          firstLevel.id as AnyNodeId,
+        )
+      } catch (error) {
+        console.warn(`Failed to place item ${pkgItem.catalogId}:`, error)
+      }
+    }
   }
 
   return {
-    buildingId: newBuildingId as string,
-    levelId: newLevelId as string,
-    itemIds,
+    buildingId: clonedBuildingId as string,
+    clonedNodes: idMap.size,
   }
 }
 
@@ -107,13 +162,11 @@ export function WebMCPTools() {
   const [isRegistered, setIsRegistered] = useState(false)
 
   useEffect(() => {
-    if (!document.modelContext || isRegistered) return
-
-    const urlParams = new URLSearchParams(window.location.search)
-    if (urlParams.get('webmcp') !== '1') return
+    const modelContext = navigator.modelContext || document.modelContext
+    if (!modelContext || isRegistered) return
 
     try {
-      document.modelContext.registerTool({
+      modelContext.registerTool({
         name: 'scene.inspect',
         description:
           'Inspect the current 3D scene: floor plan, zones, furniture items, lights, selection state, and current revision number. Start with this tool to understand what is already in Version A.',
@@ -122,8 +175,10 @@ export function WebMCPTools() {
           properties: {},
           required: [],
         },
-        readOnlyHint: true,
-        handler: async () => {
+        annotations: {
+          readOnly: true,
+        },
+        execute: async () => {
           const scene = useScene.getState()
           const nodes = scene.nodes
           const zones = Object.values(nodes).filter((n) => n && n.type === 'zone')
@@ -150,7 +205,7 @@ export function WebMCPTools() {
         },
       })
 
-      document.modelContext.registerTool({
+      modelContext.registerTool({
         name: 'scene.validate_package',
         description:
           'Validate a named furniture/lighting package against the current scene. Returns compatibility status without making changes. Use this before applying a package.',
@@ -164,7 +219,7 @@ export function WebMCPTools() {
           },
           required: ['packageId'],
         },
-        handler: async (args: Record<string, unknown>) => {
+        execute: async (args: Record<string, unknown>) => {
           const scene = useScene.getState()
           const packageId = args.packageId as string
           const validation = validatePackage(packageId, scene)
@@ -188,10 +243,10 @@ export function WebMCPTools() {
         },
       })
 
-      document.modelContext.registerTool({
+      modelContext.registerTool({
         name: 'scene.apply_package',
         description:
-          'Apply a validated package to create Version B as a sibling building on the ground, offset in +X. This tool requires human confirmation via a page modal. Version A remains untouched. Supports one native Undo.',
+          'Apply a validated package to create Version B as a sibling apartment on the ground, offset in +X. This tool requires human confirmation via a page modal. Version A remains untouched. Supports one native Undo.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -202,7 +257,7 @@ export function WebMCPTools() {
           },
           required: ['packageId'],
         },
-        handler: async (args: Record<string, unknown>) => {
+        execute: async (args: Record<string, unknown>) => {
           const packageId = args.packageId as string
           const pkg = PACKAGES[packageId]
 
@@ -243,7 +298,7 @@ export function WebMCPTools() {
             return { success: false, error: 'No building found in scene' }
           }
 
-          const result = cloneSceneForVersionB(firstBuilding.id, pkg.items)
+          const result = cloneApartmentForVersionB(firstBuilding.id, pkg.items)
 
           if (!result) {
             return { success: false, error: 'Failed to create Version B' }
@@ -273,14 +328,14 @@ export function WebMCPTools() {
             revisionBefore,
             revisionAfter,
             versionBBuildingId: result.buildingId,
-            itemsPlaced: result.itemIds.length,
+            nodesCloned: result.clonedNodes,
             message:
-              'Version B created successfully as a sibling building offset in +X. Use scene.focus_comparison to view.',
+              'Version B created successfully as a complete apartment copy offset in +X with Warm Dusk lighting. Use scene.focus_comparison to view both versions.',
           }
         },
       })
 
-      document.modelContext.registerTool({
+      modelContext.registerTool({
         name: 'scene.focus_comparison',
         description:
           'Point the camera at Version A or Version B to help the human compare. Does not walk. Does not buy furniture.',
@@ -295,7 +350,7 @@ export function WebMCPTools() {
           },
           required: ['version'],
         },
-        handler: async (args: Record<string, unknown>) => {
+        execute: async (args: Record<string, unknown>) => {
           const version = args.version as 'A' | 'B'
           const scene = useScene.getState()
 
@@ -310,7 +365,7 @@ export function WebMCPTools() {
               return {
                 focused: 'A',
                 buildingId: firstBuilding.id,
-                message: 'Camera focused on Version A (original building)',
+                message: 'Camera focused on Version A (original apartment)',
               }
             }
             return { focused: 'A', error: 'Version A building not found' }
@@ -323,7 +378,7 @@ export function WebMCPTools() {
               return {
                 focused: 'B',
                 buildingId: versionBBuildingId,
-                message: 'Camera focused on Version B (new building with package)',
+                message: 'Camera focused on Version B (apartment with Warm Dusk package)',
               }
             }
           }
@@ -332,7 +387,7 @@ export function WebMCPTools() {
         },
       })
 
-      document.modelContext.registerTool({
+      modelContext.registerTool({
         name: 'scene.session_state',
         description:
           'Get current session state: who may write, what is stale, and checkout capability. canCheckout is always false.',
@@ -341,8 +396,10 @@ export function WebMCPTools() {
           properties: {},
           required: [],
         },
-        readOnlyHint: true,
-        handler: async () => {
+        annotations: {
+          readOnly: true,
+        },
+        execute: async () => {
           const scene = useScene.getState()
           return {
             canWrite: true,
@@ -354,7 +411,7 @@ export function WebMCPTools() {
         },
       })
 
-      document.modelContext.registerTool({
+      modelContext.registerTool({
         name: 'scene.read_receipt',
         description:
           'Read the last Scene Receipt if one exists. Returns package info, revisions, timestamp, and confirmation status.',
@@ -363,8 +420,10 @@ export function WebMCPTools() {
           properties: {},
           required: [],
         },
-        readOnlyHint: true,
-        handler: async () => {
+        annotations: {
+          readOnly: true,
+        },
+        execute: async () => {
           const currentReceipt = getSceneReceipt()
           if (!currentReceipt) {
             return { exists: false, message: 'No receipt found' }
@@ -374,7 +433,7 @@ export function WebMCPTools() {
       })
 
       setIsRegistered(true)
-      console.log('[WebMCP] Registered 6 scene tools on document.modelContext')
+      console.log('[WebMCP] Registered 6 scene tools on', navigator.modelContext ? 'navigator' : 'document', '.modelContext')
     } catch (error) {
       console.error('[WebMCP] Failed to register tools:', error)
     }

@@ -15,19 +15,24 @@ export function ConfirmationModal({ packageId, packageName, onConfirm, onRefuse 
   if (!isVisible) return null
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-[90vw] max-w-md rounded-lg border border-border bg-background p-6 shadow-2xl">
-        <h2 className="mb-2 text-xl font-semibold">Confirm Package Application</h2>
-        <p className="mb-4 text-sm text-muted-foreground">
-          The agent proposes to apply <strong>{packageName}</strong> ({packageId}) as Version B.
-        </p>
-        <p className="mb-6 text-sm text-muted-foreground">
-          Version A will remain untouched. Version B will appear as a sibling building offset in +X. You can
-          undo this change with one native Undo.
-        </p>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="w-[90vw] max-w-md rounded-xl border border-white/10 bg-zinc-900/95 p-6 shadow-2xl backdrop-blur">
+        <div className="mb-4">
+          <h2 className="text-xl font-medium text-white">Apply {packageName}?</h2>
+          <p className="mt-2 text-sm leading-relaxed text-white/60">
+            Your AI agent proposes to apply the <strong className="font-medium text-white">{packageName}</strong> lighting package.
+          </p>
+        </div>
+        
+        <div className="mb-6 space-y-2 rounded-lg border border-white/5 bg-white/5 p-4 text-sm text-white/50">
+          <p>✓ Version A stays untouched</p>
+          <p>✓ Version B appears as a sibling apartment</p>
+          <p>✓ You can undo this change</p>
+        </div>
+
         <div className="flex gap-3">
           <button
-            className="flex-1 rounded border border-red-500/60 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-500/20"
+            className="flex-1 rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10"
             onClick={() => {
               setIsVisible(false)
               onRefuse()
@@ -37,7 +42,7 @@ export function ConfirmationModal({ packageId, packageName, onConfirm, onRefuse 
             Refuse
           </button>
           <button
-            className="flex-1 rounded border border-green-500/60 bg-green-500/10 px-4 py-2 text-sm font-medium text-green-600 transition-colors hover:bg-green-500/20"
+            className="flex-1 rounded-lg border border-green-500/60 bg-green-500/20 px-4 py-2.5 text-sm font-medium text-green-400 transition-colors hover:bg-green-500/30"
             onClick={() => {
               setIsVisible(false)
               onConfirm()

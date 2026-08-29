@@ -1,93 +1,114 @@
-# Demo script
+# Demo Script
 
-You talk to the agent. The agent uses WebMCP. You approve or refuse. A Scene Receipt proves the outcome.
+Test Room vibe in ChatGPT's in-app browser or Chrome 151+ with WebMCP flag.
 
 ## Setup
 
-1. `npm install` and `npm run dev` in this repository
-2. Open [http://127.0.0.1:3002/?webmcp=1](http://127.0.0.1:3002/?webmcp=1) in Chrome 151 with `enable-webmcp-testing`, or in ChatGPT's in-app browser
+1. `npm install && npm run dev` in this repository
+2. Open **http://127.0.0.1:3002** (no query string required)
 3. Hard-reload once
-4. You should see the 1-bed+living fixture and a green badge "WebMCP: 6 tools registered" in the bottom right. No AI chat tab. If you see Aedifex's empty editor with the AI panel, stop and check the URL.
+4. You should see:
+   - Full-bleed 3D room (1-bed apartment)
+   - "Room vibe" text top left
+   - Green badge "WebMCP: 6 tools registered" bottom right
+   - No editor sidebar, no AI tab, no blank canvas message
 
-The agent must not click the 3D view. The agent must not checkout.
+**Tools visible**: In ChatGPT, check for "Available site tools" — should show 6 scene tools.
 
-## Script 1 — Human refuses (try this first to see the receipt)
+## Script 1: Human Refuses (Test the modal)
+
+Paste this into ChatGPT:
 
 ```
-This page is a 3D room configurator with WebMCP. Do not click the viewport. Do not checkout.
+This is Room vibe, a 3D interior configurator. Do not click the viewport. Do not checkout.
 
-1. Inspect the live scene with scene.inspect.
-2. Tell me the zones and what is already in Version A.
-3. Validate package pkg_warm_dusk_01, then apply it.
-4. Stop after I respond to the modal.
+1. Use scene.inspect to tell me about the current apartment (Version A).
+2. Validate the pkg_warm_dusk_01 package.
+3. Apply it using scene.apply_package.
+4. Wait for me to respond to the modal.
 ```
 
-**Expected flow:**
+**Expected**:
 - Agent calls `scene.inspect` and `scene.validate_package`
 - Agent calls `scene.apply_package`
-- A page modal appears with "Confirm" and "Refuse" buttons
+- A dark modal appears: "Apply Warm Dusk?"
 - **Click Refuse**
-- Agent receives a response: `{ success: false, reason: 'refused' }`
-- A **Scene Receipt card** appears in the bottom left showing:
+- Agent receives `{ success: false, reason: 'refused' }`
+- **Scene Receipt card** appears bottom left:
   - Package: Warm Dusk (pkg_warm_dusk_01)
-  - Revision: unchanged
+  - Revision: X → N/A
   - Status: "Refused by human" (red)
-  - Timestamp
+  - Copyable (click copy icon)
+- No Version B in the scene
 
-**Pass criteria:** The receipt shows "Refused by human" and no Version B appears.
+**Pass**: Receipt shows "Refused by human", no Version B, apartment unchanged.
 
-## Script 2 — Human confirms (the happy path)
+## Script 2: Human Confirms (Happy Path)
 
-Refresh the page and run:
+Refresh the page and paste:
 
 ```
-This page is a 3D room configurator with WebMCP. Do not click the viewport. Do not checkout.
+This is Room vibe, a 3D interior configurator. Do not click the viewport. Do not checkout.
 
-1. Inspect the live scene with scene.inspect.
-2. Validate package pkg_warm_dusk_01 against the current revision, then apply it.
-3. After I confirm, use scene.focus_comparison to point me at Version A, then Version B.
-4. Read the Scene Receipt with scene.read_receipt and tell me what it says.
-5. Stop. I keep Undo.
+1. Inspect the scene with scene.inspect and tell me the zones.
+2. Validate pkg_warm_dusk_01 with scene.validate_package.
+3. Apply it with scene.apply_package.
+4. After I confirm, use scene.focus_comparison to show me Version A, then Version B.
+5. Read the Scene Receipt with scene.read_receipt.
+6. Stop. I'll test Undo myself.
 ```
 
-**Expected flow:**
+**Expected**:
 - Agent calls `scene.inspect` and `scene.validate_package`
 - Agent calls `scene.apply_package`
-- A page modal appears
+- Dark modal appears
 - **Click Confirm**
-- Agent receives `{ success: true, revisionBefore: X, revisionAfter: Y }`
-- A **Scene Receipt card** appears showing:
+- Agent receives `{ success: true, revisionBefore: X, revisionAfter: Y, nodesCloned: N }`
+- **Version B appears**: A second complete apartment offset +15m in +X with Warm Dusk lamps (floor lamps, table lamp, ceiling lamp)
+- **Scene Receipt card** appears:
   - Package: Warm Dusk (pkg_warm_dusk_01)
-  - Revision: X → Y
+  - Revision: X → Y (real revisions)
   - Status: "Confirmed by human" (green)
-  - Timestamp
-- Agent calls `scene.focus_comparison` with version "A", then "B"
-- Agent calls `scene.read_receipt` and narrates the receipt
-- Version B is a second apartment on the ground, offset in +X
-- Version A walls and existing items do not move
-- You can press Undo (native Aedifex Undo) to drop Version B
+  - Copyable
+- Agent calls `scene.focus_comparison` with "A" → camera points at original apartment
+- Agent calls `scene.focus_comparison` with "B" → camera points at new apartment with lamps
+- Agent calls `scene.read_receipt` → reads and narrates the receipt
+- You can walk both apartments (use mouse to navigate)
+- Press **Undo** (Ctrl+Z / Cmd+Z) → Version B disappears, receipt stays
 
-**Pass criteria:**
-- The receipt shows "Confirmed by human" with before/after revisions
-- Version B appears as a sibling building offset in +X
-- Version A is untouched
-- One native Undo reverts the change
+**Pass**:
+- Receipt shows "Confirmed by human" with real before/after revisions
+- Version B is a **full apartment** (walls, rooms, furniture, + Warm Dusk lamps)
+- Focus comparison moves the camera
+- Undo drops Version B
 
-## What is being judged
+## What's Being Judged
 
-The **Scene Receipt** is the product. It is:
-1. A visible card (bottom left of the screen) that persists after the agent's turn
-2. A tool-readable payload via `scene.read_receipt`
-3. Contains: package id/name, revisions before/after, tools used, timestamp, agentProposed=true, confirmedBy: "human" | "refused" | "blocked"
+**The Scene Receipt** is the product:
+- Persistent card (doesn't auto-dismiss)
+- Copyable as plain text
+- Tool-readable via `scene.read_receipt`
+- Contains: package id/name, revisions before/after, tools used, timestamp, agent proposed, confirmed by human/refused/blocked
 
-The 3D apartment is inherited from Aedifex (see [README.aedifex.md](./README.aedifex.md)). The WebMCP tools and receipt are this repo's contribution.
+The 3D apartment is inherited from Aedifex (see [README.aedifex.md](./README.aedifex.md)). Room vibe contributes the WebMCP tools, modal gate, and Scene Receipt.
 
-## Failure modes
+## Failure Modes
 
-**Fail if:**
-- The agent clicks the 3D viewport
-- The agent calls checkout
-- The AI chat tab is visible (means webmcp=1 didn't work)
-- apply_package writes without showing the modal
-- The receipt doesn't appear
-- Version B overwrites Version A
+**Fail if**:
+- Agent clicks the 3D viewport (should only use tools)
+- Agent calls checkout (not allowed)
+- Editor sidebar is visible (should be hidden)
+- AI chat tab is visible (should be hidden)
+- `?webmcp=1` required to see tools (should work without query string)
+- `apply_package` writes without showing the modal
+- Version B is just lamps with no walls/rooms (should be full apartment)
+- Receipt doesn't appear or auto-dismisses
+- Focus comparison doesn't move the camera
+- Undo doesn't drop Version B
+
+## WebMCP Notes
+
+- Tools registered on `navigator.modelContext` (fallback to `document.modelContext`)
+- Each tool has `execute` (async), not `handler`
+- Read-only tools have `annotations: { readOnly: true }`, not `readOnlyHint`
+- Works in ChatGPT in-app browser and Chrome 151+ with `enable-webmcp-testing` flag
