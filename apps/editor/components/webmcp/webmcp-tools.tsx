@@ -100,52 +100,45 @@ function cloneApartmentForVersionB(originalBuildingId: string, packageItems: Pac
   const offsetBuildingNode = {
     ...clonedBuildingNode,
     id: newBuildingId,
+    parentId: siteId,
     position: [originalPosition[0] + offsetX, originalPosition[1], originalPosition[2]] as [number, number, number],
   }
 
-  const nodesToCreate: { node: any; parentId: AnyNodeId }[] = []
+  const idToParentId = new Map<string, string>()
+  idToParentId.set(newBuildingId, siteId as string)
 
-  nodesToCreate.push({
-    node: offsetBuildingNode,
-    parentId: siteId,
-  })
-
-  const childLevels = Object.values(clonedGraph.nodes).filter(
-    (n) => n && n.type === 'level' && (n as any).parentId === newBuildingId
-  )
-
-  for (const level of childLevels) {
-    nodesToCreate.push({
-      node: level,
-      parentId: newBuildingId,
-    })
-
-    const levelChildren = Object.values(clonedGraph.nodes).filter(
-      (n) => n && (n as any).parentId === level.id
-    )
-
-    for (const child of levelChildren) {
-      nodesToCreate.push({
-        node: child,
-        parentId: level.id as AnyNodeId,
-      })
+  for (const [id, node] of Object.entries(clonedGraph.nodes)) {
+    if (id === newBuildingId) continue
+    if ('parentId' in node && node.parentId) {
+      idToParentId.set(id, node.parentId as string)
     }
   }
 
-  try {
-    scene.createNodes(nodesToCreate)
-  } catch (error) {
-    console.error('[Room vibe] Failed to create nodes via store API:', error)
-    return null
+  const topoOrdered: { node: any; parentId: AnyNodeId }[] = []
+  const added = new Set<string>()
+
+  const addNode = (nodeId: string) => {
+    if (added.has(nodeId)) return
+    
+    const parentId = idToParentId.get(nodeId)
+    if (parentId && !added.has(parentId) && idToParentId.has(parentId)) {
+      addNode(parentId)
+    }
+
+    const node = nodeId === newBuildingId ? offsetBuildingNode : clonedGraph.nodes[nodeId as AnyNodeId]
+    if (node && parentId) {
+      topoOrdered.push({ node, parentId: parentId as AnyNodeId })
+      added.add(nodeId)
+    }
   }
 
-  const sceneAfterClone = useScene.getState()
-  if (!sceneAfterClone.nodes[newBuildingId as AnyNodeId]) {
-    console.error('[Room vibe] Version B building not in store after createNodes')
-    return null
+  for (const nodeId of Object.keys(clonedGraph.nodes)) {
+    addNode(nodeId)
   }
 
-  const firstLevel = childLevels.sort((a, b) => ((a as any).level || 0) - ((b as any).level || 0))[0]
+  const firstLevel = Object.values(clonedGraph.nodes)
+    .filter((n) => n && n.type === 'level' && (n as LevelNode).parentId === newBuildingId)
+    .sort((a, b) => ((a as LevelNode).level || 0) - ((b as LevelNode).level || 0))[0]
 
   let lampsPlaced = 0
 
@@ -158,33 +151,55 @@ function cloneApartmentForVersionB(originalBuildingId: string, packageItems: Pac
       }
 
       try {
-        scene.createNode(
-          ItemNode.parse({
-            position: pkgItem.position,
-            rotation: pkgItem.rotation,
-            asset: {
-              id: catalogItem.id,
-              name: catalogItem.name,
-              category: catalogItem.category,
-              thumbnail: catalogItem.thumbnail,
-              src: catalogItem.src,
-              floorPlanUrl: catalogItem.floorPlanUrl,
-              dimensions: catalogItem.dimensions,
-              offset: catalogItem.offset || [0, 0, 0],
-              rotation: catalogItem.rotation || [0, 0, 0],
-              scale: catalogItem.scale || [1, 1, 1],
-            },
-          }),
-          firstLevel.id as AnyNodeId,
-        )
+        const lampNode = ItemNode.parse({
+          position: pkgItem.position,
+          rotation: pkgItem.rotation,
+          asset: {
+            id: catalogItem.id,
+            name: catalogItem.name,
+            category: catalogItem.category,
+            thumbnail: catalogItem.thumbnail,
+            src: catalogItem.src,
+            floorPlanUrl: catalogItem.floorPlanUrl,
+            dimensions: catalogItem.dimensions,
+            offset: catalogItem.offset || [0, 0, 0],
+            rotation: catalogItem.rotation || [0, 0, 0],
+            scale: catalogItem.scale || [1, 1, 1],
+          },
+        })
+
+        topoOrdered.push({
+          node: lampNode,
+          parentId: firstLevel.id as AnyNodeId,
+        })
         lampsPlaced++
       } catch (error) {
-        console.error(`[Room vibe] Failed to place item ${pkgItem.catalogId}:`, error)
+        console.error(`[Room vibe] Failed to parse item ${pkgItem.catalogId}:`, error)
       }
     }
   } else {
     console.warn('[Room vibe] No level found in cloned building for lamp placement')
   }
+
+  if (topoOrdered.length === 0) {
+    console.error('[Room vibe] No nodes to create after topo sort')
+    return null
+  }
+
+  try {
+    scene.createNodes(topoOrdered)
+  } catch (error) {
+    console.error('[Room vibe] Failed to create nodes via store API:', error)
+    return null
+  }
+
+  const sceneAfterWrite = useScene.getState()
+  if (!sceneAfterWrite.nodes[newBuildingId as AnyNodeId]) {
+    console.error('[Room vibe] Version B building not in store after createNodes')
+    return null
+  }
+
+  console.log('[Room vibe] Version B created with', topoOrdered.length, 'nodes in one write')
 
   return {
     buildingId: newBuildingId as string,
