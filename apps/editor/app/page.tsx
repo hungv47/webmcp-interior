@@ -5,11 +5,14 @@ import { AIChatPanel } from '@aedifex/editor/components/ai'
 import { Bot, Hammer, Layers, Package, Settings } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import { BuildTab } from '@/components/build-tab'
 import {
   CommunityViewerToolbarLeft,
   CommunityViewerToolbarRight,
 } from '@/components/viewer-toolbar'
+import { WebMCPTools } from '@/components/webmcp/webmcp-tools'
+import { WebMCPOrchestrator } from '@/components/webmcp/webmcp-orchestrator'
 
 // The open-source editor only ships the built-in catalog (no uploaded items),
 // so the Library/Community/Mine source chips and tag filters add nothing —
@@ -100,9 +103,20 @@ const SIDEBAR_TABS = [
 const PROJECT_ID = 'local-editor'
 
 export default function Home() {
+  const [isWebMCPMode, setIsWebMCPMode] = useState(false)
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    setIsWebMCPMode(urlParams.get('webmcp') === '1')
+  }, [])
+
+  const sidebarTabs = isWebMCPMode
+    ? SIDEBAR_TABS.filter((tab) => tab.id !== 'ai')
+    : SIDEBAR_TABS
+
   return (
     <div className="relative h-screen w-screen">
-      {PROJECT_ID === 'local-editor' && (
+      {PROJECT_ID === 'local-editor' && !isWebMCPMode && (
         <div className="pointer-events-none absolute top-14 left-1/2 z-40 -translate-x-1/2">
           <div className="pointer-events-none flex max-w-[min(92vw,42rem)] flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-border/60 bg-background/90 px-4 py-1.5 text-xs shadow-sm backdrop-blur">
             <span className="text-muted-foreground">
@@ -120,10 +134,16 @@ export default function Home() {
       <Editor
         layoutVersion="v2"
         projectId={PROJECT_ID}
-        sidebarTabs={SIDEBAR_TABS}
+        sidebarTabs={sidebarTabs}
         viewerToolbarLeft={<CommunityViewerToolbarLeft />}
         viewerToolbarRight={<CommunityViewerToolbarRight />}
       />
+      {isWebMCPMode && (
+        <>
+          <WebMCPTools />
+          <WebMCPOrchestrator />
+        </>
+      )}
     </div>
   )
 }
