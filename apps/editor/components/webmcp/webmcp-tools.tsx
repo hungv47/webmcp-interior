@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { emitter, useScene, type AnyNodeId, ItemNode, BuildingNode, LevelNode, cloneSceneGraph, type SceneGraph } from '@aedifex/core'
+import { emitter, useScene, type AnyNodeId, ItemNode, BuildingNode, LevelNode, cloneSceneGraph } from '@aedifex/core'
 import { PACKAGES, validatePackage, type PackageItem } from '@/lib/packages'
 import { getSceneReceipt, setSceneReceipt, type SceneReceipt } from './scene-receipt'
 import { showConfirmationModal } from './confirmation-modal'
@@ -14,7 +14,9 @@ declare global {
         name: string
         description: string
         inputSchema: Record<string, unknown>
-        readOnlyHint?: boolean
+        annotations?: {
+          readOnlyHint?: boolean
+        }
         execute: (args: Record<string, unknown>) => Promise<unknown>
       }): void
     }
@@ -25,7 +27,9 @@ declare global {
         name: string
         description: string
         inputSchema: Record<string, unknown>
-        readOnlyHint?: boolean
+        annotations?: {
+          readOnlyHint?: boolean
+        }
         execute: (args: Record<string, unknown>) => Promise<unknown>
       }): void
     }
@@ -91,33 +95,57 @@ function cloneApartmentForVersionB(originalBuildingId: string, packageItems: Pac
   }
 
   const newBuildingId = clonedGraph.rootNodeIds[0]
-  const newBuildingNode = clonedGraph.nodes[newBuildingId] as BuildingNode
+  const clonedBuildingNode = clonedGraph.nodes[newBuildingId] as BuildingNode
 
   const offsetBuildingNode = {
-    ...newBuildingNode,
+    ...clonedBuildingNode,
+    id: newBuildingId,
     position: [originalPosition[0] + offsetX, originalPosition[1], originalPosition[2]] as [number, number, number],
-    parentId: siteId,
   }
 
-  for (const [nodeId, node] of Object.entries(clonedGraph.nodes)) {
-    if (nodeId === newBuildingId) {
-      scene.nodes[nodeId as AnyNodeId] = offsetBuildingNode as any
-    } else {
-      scene.nodes[nodeId as AnyNodeId] = node
+  const nodesToCreate: { node: any; parentId: AnyNodeId }[] = []
+
+  nodesToCreate.push({
+    node: offsetBuildingNode,
+    parentId: siteId,
+  })
+
+  const childLevels = Object.values(clonedGraph.nodes).filter(
+    (n) => n && n.type === 'level' && (n as any).parentId === newBuildingId
+  )
+
+  for (const level of childLevels) {
+    nodesToCreate.push({
+      node: level,
+      parentId: newBuildingId,
+    })
+
+    const levelChildren = Object.values(clonedGraph.nodes).filter(
+      (n) => n && (n as any).parentId === level.id
+    )
+
+    for (const child of levelChildren) {
+      nodesToCreate.push({
+        node: child,
+        parentId: level.id as AnyNodeId,
+      })
     }
   }
 
-  const siteNode = scene.nodes[siteId]
-  if (siteNode && 'children' in siteNode && Array.isArray(siteNode.children)) {
-    scene.nodes[siteId] = {
-      ...siteNode,
-      children: [...siteNode.children, newBuildingId as any],
-    } as any
+  try {
+    scene.createNodes(nodesToCreate)
+  } catch (error) {
+    console.error('[Room vibe] Failed to create nodes via store API:', error)
+    return null
   }
 
-  const firstLevel = Object.values(clonedGraph.nodes)
-    .filter((n) => n && n.type === 'level' && (n as LevelNode).parentId === newBuildingId)
-    .sort((a, b) => ((a as LevelNode).level || 0) - ((b as LevelNode).level || 0))[0]
+  const sceneAfterClone = useScene.getState()
+  if (!sceneAfterClone.nodes[newBuildingId as AnyNodeId]) {
+    console.error('[Room vibe] Version B building not in store after createNodes')
+    return null
+  }
+
+  const firstLevel = childLevels.sort((a, b) => ((a as any).level || 0) - ((b as any).level || 0))[0]
 
   let lampsPlaced = 0
 
@@ -158,8 +186,6 @@ function cloneApartmentForVersionB(originalBuildingId: string, packageItems: Pac
     console.warn('[Room vibe] No level found in cloned building for lamp placement')
   }
 
-  scene.revision++
-
   return {
     buildingId: newBuildingId as string,
     clonedNodes: Object.keys(clonedGraph.nodes).length,
@@ -199,7 +225,9 @@ export function WebMCPTools() {
             properties: {},
             required: [],
           },
-          readOnlyHint: true,
+          annotations: {
+            readOnlyHint: true,
+          },
           execute: async () => {
             const scene = useScene.getState()
             const nodes = scene.nodes
@@ -241,7 +269,9 @@ export function WebMCPTools() {
             },
             required: ['packageId'],
           },
-          readOnlyHint: true,
+          annotations: {
+            readOnlyHint: true,
+          },
           execute: async (args: Record<string, unknown>) => {
             const scene = useScene.getState()
             const packageId = args.packageId as string
@@ -434,7 +464,9 @@ export function WebMCPTools() {
             properties: {},
             required: [],
           },
-          readOnlyHint: true,
+          annotations: {
+            readOnlyHint: true,
+          },
           execute: async () => {
             const scene = useScene.getState()
             return {
@@ -456,7 +488,9 @@ export function WebMCPTools() {
             properties: {},
             required: [],
           },
-          readOnlyHint: true,
+          annotations: {
+            readOnlyHint: true,
+          },
           execute: async () => {
             const currentReceipt = getSceneReceipt()
             if (!currentReceipt) {
