@@ -209,24 +209,16 @@ function cloneApartmentForVersionB(originalBuildingId: string, packageItems: Pac
 }
 
 export function WebMCPTools() {
-  const [toolStatus, setToolStatus] = useState<'pending' | 'registered' | 'hidden'>('pending')
-
   useEffect(() => {
     let attemptCount = 0
-    const maxAttempts = 50
-    const retryInterval = 100
+    const retryInterval = 500
 
     const tryRegister = () => {
       attemptCount++
 
       const modelContext = document.modelContext || navigator.modelContext
       if (!modelContext) {
-        if (attemptCount < maxAttempts) {
-          setTimeout(tryRegister, retryInterval)
-        } else {
-          console.warn('[WebMCP] modelContext never appeared after', maxAttempts, 'attempts')
-          setToolStatus('hidden')
-        }
+        setTimeout(tryRegister, retryInterval)
         return
       }
 
@@ -515,26 +507,14 @@ export function WebMCPTools() {
           },
         })
 
-        setToolStatus('registered')
         console.log('[WebMCP] Registered 6 scene tools on', document.modelContext ? 'document' : 'navigator', '.modelContext')
-        
-        setTimeout(() => {
-          setToolStatus('hidden')
-        }, 3000)
       } catch (error) {
         console.error('[WebMCP] Failed to register tools:', error)
-        setToolStatus('hidden')
       }
     }
 
     tryRegister()
   }, [])
 
-  if (toolStatus === 'hidden') return null
-
-  return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-50 rounded-full border border-emerald-500/40 bg-emerald-500/5 px-3 py-1.5 text-xs text-emerald-600 backdrop-blur transition-opacity duration-500">
-      {toolStatus === 'registered' ? 'WebMCP ready' : 'Connecting...'}
-    </div>
-  )
+  return null
 }
