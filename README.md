@@ -1,8 +1,8 @@
 # Room vibe
 
-A WebMCP interior configurator on [Aedifex](https://github.com/TangSY/aedifex). An AI agent applies lighting packages to a live 3D apartment through WebMCP tools. The human confirms or refuses via a clean modal. A Scene Receipt records every outcome.
+A WebMCP Scene Receipt system on [Aedifex](https://github.com/TangSY/aedifex). Send ChatGPT into a live 1-bed. It cannot restyle until you confirm. The second building is the proof on screen. The Scene Receipt is what you keep.
 
-Built for the [OpenAI WebMCP Challenge](https://openai.com/webmcp-challenge/). Not affiliated with Aedifex or Pascal Group.
+Built for the [OpenAI WebMCP Challenge](https://openai.com/webmcp-challenge/). Aedifex (MIT) provides the 3D engine. Not affiliated with Aedifex or Pascal Group.
 
 **Repository**: `hungv47/webmcp-interior`
 
@@ -10,15 +10,14 @@ Built for the [OpenAI WebMCP Challenge](https://openai.com/webmcp-challenge/). N
 
 **The judged deliverable is the Scene Receipt**, not the 3D apartment. 
 
-Room vibe is a consumer interior app where:
-1. A human and AI agent share one 3D room
-2. The agent can only act through named WebMCP tools (no DOM scraping/clicking)
-3. Every package application waits for human approval via page modal
-4. After confirmation, a shareable Scene Receipt is minted
-5. One native Undo drops Version B
-6. Checkout is disabled forever
+Room vibe gives the agent 6 WebMCP tools. Every package application waits for human approval via modal. After confirmation (or refusal), a persistent Scene Receipt is minted containing package ID/name, revisions before/after, tools used, timestamp, agent proposed, and confirmed/refused status.
 
-The experience is a full-bleed 3D room with minimal overlay: product name, confirm/refuse modal, and a persistent Scene Receipt card. No editor chrome.
+The receipt is:
+- **Persistent** (bottom-left card, doesn't auto-dismiss)
+- **Copyable** (copy icon → plain text)
+- **Tool-readable** (`scene.read_receipt` returns the last receipt)
+
+The 3D apartment is the substrate for the demo. The confirm modal + Scene Receipt are the judged work.
 
 ## WebMCP Tools
 
@@ -43,15 +42,15 @@ The experience is a full-bleed 3D room with minimal overlay: product name, confi
    - **Confirm** → Full apartment clone offset +15m in +X with Warm Dusk lamps, green receipt ("Confirmed by human"), real revisions
 5. **Compare**: Agent calls `scene.focus_comparison` to point camera at A or B
 6. **Receipt**: Agent calls `scene.read_receipt` to read the minted receipt
-7. **Undo** (optional): Human presses native Undo to drop Version B
+7. **Undo** (optional): Human presses Undo to drop Version B
 
-**Version B**: A complete walkable apartment (walls, zones, levels, Warm Dusk lamps), not just four lamps in an empty building.
+**Version B**: A complete walkable apartment (walls, zones, levels, Warm Dusk lamps), not just lamps in an empty building. This proves the mutation happened. The Scene Receipt is what you keep.
 
 ## WebMCP Implementation
 
 Tools register on **`navigator.modelContext`** (with fallback to `document.modelContext`). Each tool has:
 - `execute` (async function) — not `handler`
-- `annotations: { readOnly: true }` for read-only tools — not `readOnlyHint`
+- `readOnlyHint: true` at top level for read-only tools — not `annotations.readOnly`
 
 Visible as **Available site tools** in ChatGPT's in-app browser or Chrome with `chrome://flags/#enable-webmcp-testing`.
 
@@ -79,6 +78,8 @@ The **Scene Receipt** is a persistent card (bottom left) containing:
 **Copyable**: Click the copy icon to copy the receipt as plain text.
 
 **Tool-readable**: `scene.read_receipt` returns the last minted receipt.
+
+This is the judged product.
 
 ## Architecture
 

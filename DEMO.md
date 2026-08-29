@@ -1,6 +1,8 @@
 # Demo Script
 
-Test Room vibe in ChatGPT's in-app browser or Chrome 151+ with WebMCP flag.
+Test Room vibe's Scene Receipt system in ChatGPT's in-app browser or Chrome 151+ with WebMCP flag.
+
+**The judged product is the Scene Receipt**, not the 3D apartment. The script below tests refuse, confirm, and receipt flows. Never open the tape on the pretty room as the product.
 
 ## Setup
 
@@ -8,19 +10,20 @@ Test Room vibe in ChatGPT's in-app browser or Chrome 151+ with WebMCP flag.
 2. Open **http://127.0.0.1:3002** (no query string required)
 3. Hard-reload once
 4. You should see:
-   - Full-bleed 3D room (1-bed apartment)
+   - 3D room (1-bed apartment) - this is the substrate, not the product
    - "Room vibe" text top left
-   - Green badge "WebMCP: 6 tools registered" bottom right
+   - Quiet "WebMCP ready" badge bottom right (fades after 3s)
+   - Undo button top right (disabled until a change)
    - No editor sidebar, no AI tab, no blank canvas message
 
 **Tools visible**: In ChatGPT, check for "Available site tools" — should show 6 scene tools.
 
-## Script 1: Human Refuses (Test the modal)
+## Script 1: Refuse Flow (Test the modal, test the red receipt)
 
 Paste this into ChatGPT:
 
 ```
-This is Room vibe, a 3D interior configurator. Do not click the viewport. Do not checkout.
+This is Room vibe, a Scene Receipt demo. Do not click the viewport. Do not checkout.
 
 1. Use scene.inspect to tell me about the current apartment (Version A).
 2. Validate the pkg_warm_dusk_01 package.
@@ -40,15 +43,16 @@ This is Room vibe, a 3D interior configurator. Do not click the viewport. Do not
   - Status: "Refused by human" (red)
   - Copyable (click copy icon)
 - No Version B in the scene
+- Apartment unchanged
 
-**Pass**: Receipt shows "Refused by human", no Version B, apartment unchanged.
+**Pass**: Receipt shows "Refused by human", no Version B, apartment unchanged. The receipt is the product.
 
-## Script 2: Human Confirms (Happy Path)
+## Script 2: Confirm Flow (Test the green receipt, test Version B proof, test Undo)
 
 Refresh the page and paste:
 
 ```
-This is Room vibe, a 3D interior configurator. Do not click the viewport. Do not checkout.
+This is Room vibe, a Scene Receipt demo. Do not click the viewport. Do not checkout.
 
 1. Inspect the scene with scene.inspect and tell me the zones.
 2. Validate pkg_warm_dusk_01 with scene.validate_package.
@@ -74,13 +78,14 @@ This is Room vibe, a 3D interior configurator. Do not click the viewport. Do not
 - Agent calls `scene.focus_comparison` with "B" → camera points at new apartment with lamps
 - Agent calls `scene.read_receipt` → reads and narrates the receipt
 - You can walk both apartments (use mouse to navigate)
-- Press **Undo** (Ctrl+Z / Cmd+Z) → Version B disappears, receipt stays
+- **Click Undo button (top right)** → Version B disappears, receipt stays
 
 **Pass**:
 - Receipt shows "Confirmed by human" with real before/after revisions
-- Version B is a **full apartment** (walls, rooms, furniture, + Warm Dusk lamps)
+- Version B is a **full apartment** (walls, rooms, furniture, + Warm Dusk lamps) - this is the proof on screen
 - Focus comparison moves the camera
 - Undo drops Version B
+- **The receipt persists and is copyable** - this is what you keep
 
 ## What's Being Judged
 
@@ -90,7 +95,7 @@ This is Room vibe, a 3D interior configurator. Do not click the viewport. Do not
 - Tool-readable via `scene.read_receipt`
 - Contains: package id/name, revisions before/after, tools used, timestamp, agent proposed, confirmed by human/refused/blocked
 
-The 3D apartment is inherited from Aedifex (see [README.aedifex.md](./README.aedifex.md)). Room vibe contributes the WebMCP tools, modal gate, and Scene Receipt.
+The 3D apartment is inherited from Aedifex (see [README.aedifex.md](./README.aedifex.md)). Room vibe contributes the WebMCP tools, modal gate, and Scene Receipt. The second building is the proof. The receipt is what you keep.
 
 ## Failure Modes
 
@@ -103,12 +108,15 @@ The 3D apartment is inherited from Aedifex (see [README.aedifex.md](./README.aed
 - `apply_package` writes without showing the modal
 - Version B is just lamps with no walls/rooms (should be full apartment)
 - Receipt doesn't appear or auto-dismisses
+- Receipt is not copyable
 - Focus comparison doesn't move the camera
 - Undo doesn't drop Version B
+- Tools don't appear if ChatGPT injects modelContext late (should poll/retry)
 
 ## WebMCP Notes
 
 - Tools registered on `navigator.modelContext` (fallback to `document.modelContext`)
 - Each tool has `execute` (async), not `handler`
-- Read-only tools have `annotations: { readOnly: true }`, not `readOnlyHint`
+- Read-only tools have `readOnlyHint: true` at top level, not `annotations.readOnly`
 - Works in ChatGPT in-app browser and Chrome 151+ with `enable-webmcp-testing` flag
+- Registration polls/retries up to 5s if context not available on first paint

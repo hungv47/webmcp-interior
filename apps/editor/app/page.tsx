@@ -74,7 +74,6 @@ export default function Home() {
     <div className="relative h-screen w-screen overflow-hidden">
       <div className="pointer-events-none absolute top-6 left-6 z-50">
         <h1 className="text-lg font-light tracking-wide text-white/90">Room vibe</h1>
-        <p className="mt-1 text-xs text-white/40">AI-guided interior</p>
       </div>
 
       <div className="pointer-events-auto absolute top-6 right-6 z-50">
