@@ -156,6 +156,7 @@ function applyPose(controls: CameraControlsImpl, pose: Pose, smooth: boolean) {
 
 export function FrameRoomCamera() {
   const controls = useRef<CameraControlsImpl | null>(null)
+  const camera = useThree((state) => state.camera)
   const invalidate = useThree((state) => state.invalidate)
 
   const frameInitial = () => {
@@ -167,6 +168,15 @@ export function FrameRoomCamera() {
     invalidate()
     return true
   }
+
+  useEffect(() => {
+    const pose = initialPose()
+    if (pose) {
+      camera.position.set(pose.position[0], pose.position[1], pose.position[2])
+      camera.lookAt(pose.target[0], pose.target[1], pose.target[2])
+      camera.updateProjectionMatrix()
+    }
+  }, [camera])
 
   useLayoutEffect(() => {
     if (frameInitial()) return undefined
