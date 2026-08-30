@@ -8,34 +8,29 @@ import { showConfirmationModal } from './confirmation-modal'
 import { CATALOG_ITEMS } from '@aedifex/editor'
 import { webmcpEvents } from './events'
 
+type ModelContextTool = {
+  name: string
+  description: string
+  inputSchema: Record<string, unknown>
+  annotations?: {
+    readOnlyHint?: boolean
+  }
+  execute: (args: Record<string, unknown>) => Promise<unknown>
+}
+
+type ModelContext = {
+  registerTool(
+    config: ModelContextTool,
+    options?: { signal?: AbortSignal },
+  ): void | Promise<void>
+}
+
 declare global {
   interface Navigator {
-    modelContext?: {
-      registerTool(config: {
-        name: string
-        description: string
-        inputSchema: Record<string, unknown>
-        annotations?: {
-          readOnlyHint?: boolean
-        }
-        signal?: AbortSignal
-        execute: (args: Record<string, unknown>) => Promise<unknown>
-      }): Promise<void>
-    }
+    modelContext?: ModelContext
   }
   interface Document {
-    modelContext?: {
-      registerTool(config: {
-        name: string
-        description: string
-        inputSchema: Record<string, unknown>
-        annotations?: {
-          readOnlyHint?: boolean
-        }
-        signal?: AbortSignal
-        execute: (args: Record<string, unknown>) => Promise<unknown>
-      }): Promise<void>
-    }
+    modelContext?: ModelContext
   }
 }
 
@@ -224,8 +219,12 @@ export function WebMCPTools() {
       }
 
       try {
-        await modelContext.registerTool({
-          signal: abortController.signal,
+        const register = (tool: ModelContextTool) =>
+          Promise.resolve(
+            modelContext.registerTool(tool, { signal: abortController.signal }),
+          )
+
+        await register({
           name: 'scene.inspect',
           description:
             'Inspect the current 3D scene: floor plan, zones, furniture items, lights, selection state, and current revision number. Start with this tool to understand what is already in Version A.',
@@ -256,19 +255,28 @@ export function WebMCPTools() {
               })),
               items: items.map((i) => ({
                 id: i.id,
-                type: i.type,
+                name:
+                  (i as { name?: string }).name ||
+                  (i as { asset?: { id?: string } }).asset?.id ||
+                  'item',
                 position: (i as { position?: [number, number, number] }).position,
               })),
               walls: walls.length,
               levels: levels.length,
               revision,
               totalNodes: Object.keys(nodes).length,
+              availablePackages: Object.values(PACKAGES).map((pkg) => ({
+                id: pkg.id,
+                name: pkg.name,
+                description: pkg.description,
+                itemCount: pkg.items.length,
+              })),
+              catalogSkuCount: CATALOG_ITEMS.length,
             }
           },
         })
 
-        await modelContext.registerTool({
-          signal: abortController.signal,
+        await register({
           name: 'scene.validate_package',
           description:
             'Validate a named furniture/lighting package against the current scene. Returns compatibility status without making changes. Use this before applying a package.',
@@ -311,8 +319,7 @@ export function WebMCPTools() {
           },
         })
 
-        await modelContext.registerTool({
-          signal: abortController.signal,
+        await register({
           name: 'scene.apply_package',
           description:
             'Apply a validated package to create Version B as a sibling apartment on the ground, offset in +X. This tool requires human confirmation via a page modal. Version A remains untouched. Supports one native Undo.',
@@ -418,8 +425,7 @@ export function WebMCPTools() {
           },
         })
 
-        await modelContext.registerTool({
-          signal: abortController.signal,
+        await register({
           name: 'scene.focus_comparison',
           description:
             'Point the camera at Version A or Version B to help the human compare. Does not walk. Does not buy furniture.',
@@ -445,7 +451,7 @@ export function WebMCPTools() {
             if (version === 'A') {
               const firstBuilding = buildings[0]
               if (firstBuilding) {
-                emitter.emit('camera-controls:view', { nodeId: firstBuilding.id })
+                emitter.emit('camera-controls:focus', { nodeId: firstBuilding.id })
                 return {
                   focused: 'A',
                   buildingId: firstBuilding.id,
@@ -458,7 +464,7 @@ export function WebMCPTools() {
             if (versionBBuildingId) {
               const buildingB = scene.nodes[versionBBuildingId as AnyNodeId]
               if (buildingB && buildingB.type === 'building') {
-                emitter.emit('camera-controls:view', { nodeId: versionBBuildingId as AnyNodeId })
+                emitter.emit('camera-controls:focus', { nodeId: versionBBuildingId as AnyNodeId })
                 return {
                   focused: 'B',
                   buildingId: versionBBuildingId,
@@ -471,8 +477,7 @@ export function WebMCPTools() {
           },
         })
 
-        await modelContext.registerTool({
-          signal: abortController.signal,
+        await register({
           name: 'scene.session_state',
           description:
             'Get current session state: who may write, what is stale, and checkout capability. canCheckout is always false.',
@@ -497,8 +502,7 @@ export function WebMCPTools() {
           },
         })
 
-        await modelContext.registerTool({
-          signal: abortController.signal,
+        await register({
           name: 'scene.read_receipt',
           description:
             'Read the last Scene Receipt if one exists. Returns package info, revisions, timestamp, and confirmation status.',

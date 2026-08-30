@@ -1,5 +1,7 @@
 # Agent Instructions — `TangSY/aedifex`
 
+This checkout is Hung's Room vibe fork (`hungv47/webmcp-interior`). Before changing the consumer page or WebMCP tools, read `ROOM-VIBE.md`.
+
 Public, open-source home of `@aedifex/{core,viewer,editor,mcp}` and the standalone editor app. Consumed both as npm packages and (in the closed-source `aedifex-saas` repo) via `file:` workspace links.
 
 ## Repo Shape

@@ -44,7 +44,7 @@ export function WebMCPOrchestrator() {
           packageName={modalState.packageName}
         />
       )}
-      {receipt && <SceneReceiptCard onClose={() => setReceipt(null)} receipt={receipt} />}
+      {receipt && <SceneReceiptCard receipt={receipt} />}
     </>
   )
 }

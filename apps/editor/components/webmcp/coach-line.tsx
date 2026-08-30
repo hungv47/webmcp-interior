@@ -55,20 +55,25 @@ export function CoachLine() {
   const getMessage = () => {
     switch (status) {
       case 'waiting':
-        return 'Waiting for ChatGPT to inspect the 1-bed.'
+        return 'No furniture buttons on this page. Open How it works, then open this URL in ChatGPT so it can inspect the 1-bed.'
       case 'apply':
-        return 'Ask ChatGPT to apply Warm Dusk, then confirm here.'
+        return 'Ask ChatGPT to apply Warm Dusk. A confirm dialog will appear here.'
       case 'confirm':
-        return 'Confirm on this page. ChatGPT cannot restyle until you do.'
-      case 'done':
-        return 'Version B is next door. Your Scene Receipt stays.'
+        return 'Confirm or Refuse on this page. ChatGPT cannot restyle until you do.'
+      case 'done': {
+        const receipt = getSceneReceipt()
+        if (receipt?.confirmedBy === 'refused') {
+          return 'You refused. Version A is unchanged. The Scene Receipt stays.'
+        }
+        return 'Walk both rooms. Undo (top right) drops Version B. Your Scene Receipt stays.'
+      }
     }
   }
 
   return (
-    <div className="pointer-events-none fixed bottom-6 left-6 z-40">
-      <div className="rounded-lg border border-white/10 bg-black/40 px-4 py-2 backdrop-blur">
-        <p className="text-sm text-white/70">{getMessage()}</p>
+    <div className="pointer-events-none fixed right-6 bottom-6 left-6 z-40 max-w-lg">
+      <div className="rounded-lg border border-white/10 bg-black/55 px-4 py-2.5 backdrop-blur">
+        <p className="text-sm leading-relaxed text-white/80">{getMessage()}</p>
       </div>
     </div>
   )

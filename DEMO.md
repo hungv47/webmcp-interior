@@ -1,21 +1,24 @@
 # Demo Script
 
+Product contract: `ROOM-VIBE.md`.
+
 Test Room vibe's Scene Receipt system in ChatGPT's in-app browser or Chrome 151+ with WebMCP flag.
 
 **The judged product is the Scene Receipt**, not the 3D apartment. The script below tests refuse, confirm, and receipt flows. Never open the tape on the pretty room as the product.
 
+The 1-bed is already furnished from Aedifex's catalog. Humans do not get a furniture grid on this page. ChatGPT applies named packages.
+
 ## Setup
 
-1. `npm install && npm run dev` in this repository
+1. `turbo run dev --filter=editor` in this repository (loads `.env.defaults`, PORT 3002). Do not use root `bun dev` / `npm run dev`; they die on `@aedifex/ifc-converter`.
 2. Open **http://127.0.0.1:3002** (no query string required)
 3. Hard-reload once
 4. You should see:
-   - 3D room (1-bed apartment) - this is the substrate, not the product
-   - "Room vibe" text top left
-   - Undo button top right (disabled until a change)
-   - **First visit**: A card overlays the room with three short lines about ChatGPT → confirm → receipt. Click "Got it" or "Skip" to dismiss. It remembers and won't show again.
-   - **Coach line** (bottom left): Changes based on state — waiting for inspect, ask to apply, confirm on page, receipt stays.
-   - No editor sidebar, no AI tab, no blank canvas message
+   - How it works card (what the product is, that tools live in ChatGPT, copyable prompt). Dismiss with "Show me the room". Reopen anytime via **How it works** top left.
+   - Camera framed on the 1-bed (drag to orbit). Sunset light, no zone overlays. Not empty sky.
+   - "Room vibe" top left, Undo top right (disabled until a change)
+   - Coach line that tells you the next human step
+   - No editor sidebar, no AI tab, no furniture catalog buttons on the page. Furniture is already in the room; ChatGPT restyles it.
 
 **Tools visible**: In ChatGPT, check for "Available site tools" — should show 6 scene tools.
 

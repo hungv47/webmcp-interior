@@ -1,13 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Viewer } from '@aedifex/viewer'
+import { Viewer, useViewer } from '@aedifex/viewer'
 import { useScene, clearSceneHistory } from '@aedifex/core'
 import { Undo2 } from 'lucide-react'
 import { WebMCPTools } from '@/components/webmcp/webmcp-tools'
 import { WebMCPOrchestrator } from '@/components/webmcp/webmcp-orchestrator'
-import { FirstVisitCard } from '@/components/webmcp/first-visit-card'
+import { FirstVisitCard, HowItWorksButton } from '@/components/webmcp/first-visit-card'
 import { CoachLine } from '@/components/webmcp/coach-line'
+import { FrameRoomCamera } from '@/components/webmcp/frame-room-camera'
 
 export default function Home() {
   const [isLoaded, setIsLoaded] = useState(false)
@@ -31,6 +32,11 @@ export default function Home() {
           materials: sceneData.materials,
           installedPlugins: sceneData.installedPlugins,
         })
+
+        const viewer = useViewer.getState()
+        viewer.setSceneTheme('sunset')
+        viewer.setShowZones(false)
+        viewer.setShowGuides(false)
 
         clearSceneHistory()
 
@@ -74,8 +80,9 @@ export default function Home() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden">
-      <div className="pointer-events-none absolute top-6 left-6 z-50">
+      <div className="pointer-events-none absolute top-6 left-6 z-50 flex items-center gap-3">
         <h1 className="text-lg font-light tracking-wide text-white/90">Room vibe</h1>
+        <HowItWorksButton />
       </div>
 
       <div className="pointer-events-auto absolute top-6 right-6 z-50">
@@ -95,7 +102,9 @@ export default function Home() {
         </button>
       </div>
 
-      <Viewer projectId="room-vibe-demo" />
+      <Viewer>
+        <FrameRoomCamera />
+      </Viewer>
 
       <WebMCPTools />
       <WebMCPOrchestrator />
