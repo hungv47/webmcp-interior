@@ -534,6 +534,10 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(
       }`}
       dpr={[1, maxDpr]}
       frameloop="never"
+      onCreated={({ camera }) => {
+        camera.lookAt(9, 1.6, 5)
+        camera.updateProjectionMatrix()
+      }}
       gl={
         ((props: { canvas?: HTMLCanvasElement; powerPreference?: RendererPowerPreference }) => {
           const canvas = props.canvas
