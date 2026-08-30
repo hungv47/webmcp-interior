@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useState } from 'react'
 import { Viewer, useViewer } from '@aedifex/viewer'
-import { useScene, clearSceneHistory, ItemNode, type AnyNodeId } from '@aedifex/core'
+import { useScene, clearSceneHistory, ItemNode, emitter, type AnyNodeId } from '@aedifex/core'
 import { Undo2 } from 'lucide-react'
 import { WebMCPTools } from '@/components/webmcp/webmcp-tools'
 import { WebMCPOrchestrator } from '@/components/webmcp/webmcp-orchestrator'
@@ -123,6 +123,15 @@ export default function Home() {
         }
 
         clearSceneHistory()
+
+        const groundLevel = Object.values(scene.nodes).find(
+          (n) => n && n.type === 'level' && (n as any).level === 0
+        )
+        if (groundLevel) {
+          setTimeout(() => {
+            emitter.emit('camera-controls:view', { nodeId: groundLevel.id })
+          }, 100)
+        }
 
         setIsLoaded(true)
         console.log('[Room vibe] Demo scene loaded:', Object.keys(sceneData.nodes).length, 'nodes')
