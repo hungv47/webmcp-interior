@@ -206,7 +206,7 @@ export default function Home() {
         </a>
       </div>
 
-      <Viewer renderContext="viewer">
+      <Viewer renderContext="viewer" defaultRender={false}>
         <FrameRoomCamera />
       </Viewer>
 
