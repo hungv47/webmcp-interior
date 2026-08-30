@@ -5,7 +5,7 @@ import { emitter, useScene, type AnyNodeId, ItemNode, BuildingNode, LevelNode, c
 import { PACKAGES, validatePackage, type PackageItem } from '@/lib/packages'
 import { getSceneReceipt, setSceneReceipt, type SceneReceipt } from './scene-receipt'
 import { showConfirmationModal } from './confirmation-modal'
-import { CATALOG_ITEMS } from '@aedifex/editor/components/ui/item-catalog/catalog-items'
+import { CATALOG_ITEMS } from '@aedifex/editor'
 
 declare global {
   interface Navigator {
@@ -17,8 +17,9 @@ declare global {
         annotations?: {
           readOnlyHint?: boolean
         }
+        signal?: AbortSignal
         execute: (args: Record<string, unknown>) => Promise<unknown>
-      }): void
+      }): Promise<void>
     }
   }
   interface Document {
@@ -30,8 +31,9 @@ declare global {
         annotations?: {
           readOnlyHint?: boolean
         }
+        signal?: AbortSignal
         execute: (args: Record<string, unknown>) => Promise<unknown>
-      }): void
+      }): Promise<void>
     }
   }
 }
@@ -210,20 +212,19 @@ function cloneApartmentForVersionB(originalBuildingId: string, packageItems: Pac
 
 export function WebMCPTools() {
   useEffect(() => {
-    let attemptCount = 0
-    const retryInterval = 500
+    const abortController = new AbortController()
+    let pollTimeout: NodeJS.Timeout | null = null
 
-    const tryRegister = () => {
-      attemptCount++
-
+    const tryRegister = async () => {
       const modelContext = document.modelContext || navigator.modelContext
       if (!modelContext) {
-        setTimeout(tryRegister, retryInterval)
+        pollTimeout = setTimeout(tryRegister, 500)
         return
       }
 
       try {
-        modelContext.registerTool({
+        await modelContext.registerTool({
+          signal: abortController.signal,
           name: 'scene.inspect',
           description:
             'Inspect the current 3D scene: floor plan, zones, furniture items, lights, selection state, and current revision number. Start with this tool to understand what is already in Version A.',
@@ -263,7 +264,8 @@ export function WebMCPTools() {
           },
         })
 
-        modelContext.registerTool({
+        await modelContext.registerTool({
+          signal: abortController.signal,
           name: 'scene.validate_package',
           description:
             'Validate a named furniture/lighting package against the current scene. Returns compatibility status without making changes. Use this before applying a package.',
@@ -304,7 +306,8 @@ export function WebMCPTools() {
           },
         })
 
-        modelContext.registerTool({
+        await modelContext.registerTool({
+          signal: abortController.signal,
           name: 'scene.apply_package',
           description:
             'Apply a validated package to create Version B as a sibling apartment on the ground, offset in +X. This tool requires human confirmation via a page modal. Version A remains untouched. Supports one native Undo.',
@@ -410,7 +413,8 @@ export function WebMCPTools() {
           },
         })
 
-        modelContext.registerTool({
+        await modelContext.registerTool({
+          signal: abortController.signal,
           name: 'scene.focus_comparison',
           description:
             'Point the camera at Version A or Version B to help the human compare. Does not walk. Does not buy furniture.',
@@ -462,7 +466,8 @@ export function WebMCPTools() {
           },
         })
 
-        modelContext.registerTool({
+        await modelContext.registerTool({
+          signal: abortController.signal,
           name: 'scene.session_state',
           description:
             'Get current session state: who may write, what is stale, and checkout capability. canCheckout is always false.',
@@ -486,7 +491,8 @@ export function WebMCPTools() {
           },
         })
 
-        modelContext.registerTool({
+        await modelContext.registerTool({
+          signal: abortController.signal,
           name: 'scene.read_receipt',
           description:
             'Read the last Scene Receipt if one exists. Returns package info, revisions, timestamp, and confirmation status.',
@@ -509,11 +515,20 @@ export function WebMCPTools() {
 
         console.log('[WebMCP] Registered 6 scene tools on', document.modelContext ? 'document' : 'navigator', '.modelContext')
       } catch (error) {
-        console.error('[WebMCP] Failed to register tools:', error)
+        if (!abortController.signal.aborted) {
+          console.error('[WebMCP] Failed to register tools:', error)
+        }
       }
     }
 
     tryRegister()
+
+    return () => {
+      abortController.abort()
+      if (pollTimeout) {
+        clearTimeout(pollTimeout)
+      }
+    }
   }, [])
 
   return null

@@ -12,7 +12,6 @@ Test Room vibe's Scene Receipt system in ChatGPT's in-app browser or Chrome 151+
 4. You should see:
    - 3D room (1-bed apartment) - this is the substrate, not the product
    - "Room vibe" text top left
-   - Quiet "WebMCP ready" badge bottom right (fades after 3s)
    - Undo button top right (disabled until a change)
    - No editor sidebar, no AI tab, no blank canvas message
 
@@ -117,7 +116,7 @@ The 3D apartment is inherited from Aedifex (see [README.aedifex.md](./README.aed
 
 - Tools registered on `document.modelContext` (fallback to `navigator.modelContext`, deprecated in Chromium 150)
 - Each tool has `execute` (async), not `handler`
-- Read-only tools have `readOnlyHint: true` at top level
+- Read-only tools have `annotations: { readOnlyHint: true }`
 - Works in ChatGPT in-app browser (Sol/Terra) and Chrome 151+ with `enable-webmcp-testing` flag
 - **Note**: Luna model has WebMCP disabled; use Sol or Terra for testing
-- Registration polls/retries up to 5s if context not available on first paint
+- Registration polls indefinitely (500ms interval) until modelContext injection — ChatGPT may inject late
