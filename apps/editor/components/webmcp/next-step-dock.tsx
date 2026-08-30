@@ -15,8 +15,12 @@ export function NextStepDock() {
   const [hasModelContext, setHasModelContext] = useState(false)
   const [hasReceipt, setHasReceipt] = useState(false)
   const [buildingCount, setBuildingCount] = useState(1)
+  const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
+    const showDock = () => setIsVisible(true)
+    window.addEventListener('room-vibe:open-how-it-works', showDock)
+
     const checkModelContext = () => {
       const context = document.modelContext || navigator.modelContext
       setHasModelContext(!!context)
@@ -33,6 +37,11 @@ export function NextStepDock() {
       setBuildingCount(buildings.length)
     }
 
+    const handleReceiptCreated = () => {
+      setHasReceipt(true)
+      setIsVisible(true)
+    }
+
     checkModelContext()
     checkReceipt()
     checkBuildings()
@@ -43,17 +52,16 @@ export function NextStepDock() {
       checkBuildings()
     }, 1000)
 
-    const handleReceiptCreated = () => {
-      setHasReceipt(true)
-    }
-
     window.addEventListener('webmcp:receipt-created', handleReceiptCreated)
 
     return () => {
       clearInterval(interval)
+      window.removeEventListener('room-vibe:open-how-it-works', showDock)
       window.removeEventListener('webmcp:receipt-created', handleReceiptCreated)
     }
   }, [])
+
+  if (!isVisible) return null
 
   const handleCopy = async () => {
     try {
