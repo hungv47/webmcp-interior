@@ -155,6 +155,17 @@ export default function Home() {
         </button>
       </div>
 
+      <div className="pointer-events-none absolute top-6 right-6 left-6 z-30 flex justify-center">
+        <a 
+          href="https://github.com/TangSY/aedifex" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="pointer-events-auto rounded-full border border-white/5 bg-black/20 px-3 py-1 text-xs text-white/30 backdrop-blur transition-colors hover:bg-black/30 hover:text-white/50"
+        >
+          Built on Aedifex (MIT)
+        </a>
+      </div>
+
       <Viewer>
         <FrameRoomCamera />
       </Viewer>

@@ -47,15 +47,8 @@ ChatGPT will not see site tools on localhost. Public HTTPS is a separate Hung GO
 - Warm Dusk GLBs are Supabase CDN. Offline they miss. `table-lamp` is CDN-only.
 - `scene.inspect` returns item names, `availablePackages`, and `catalogSkuCount`. It does not dump 111 SKUs.
 - **Version A is seeded with Lived-in Interior furniture at load** (sofa, dining set, carpet, bookshelf, plant) so first paint is a furnished 1-bed, not an empty lot.
-- **Next-step dock** appears after onboarding, showing: open URL in ChatGPT (Sol/Terra), copy prompt, confirm/refuse on page. Dock detects `modelContext` and guides accordingly.
-
-## Next (Hung GO unless listed)
-
-Do these on this branch, draft PR #2. Do not merge. Do not host.
-
-1. **Look.** The 1-bed is a yard-and-fence plan with chairs, not a styled interior. A second named package that actually restyles furniture (not just four lamps) would make the catalog feel real. Keep six tools. Add packages in `apps/editor/lib/packages.ts`.
-2. **Undo vs coach.** After Undo, coach copy must not say Version B is next door if B is gone.
-3. **Hosting.** Public https before ChatGPT judging. Official cutoff Thu 3 Sep 2026 1:00pm PDT. Hung's cap Wed 2 Sep 8:00pm Vietnam.
+- **Next-step dock** appears after onboarding, showing: open URL in ChatGPT (Sol/Terra), copy prompt, confirm/refuse on page. Dock detects `modelContext` and guides accordingly. Dock repositions when Scene Receipt appears.
+- **Two packages**: Warm Dusk (4 lamps) and Lived-in Interior (furniture). Version B skips duplicate items already present in Version A.
 
 ## Demo
 

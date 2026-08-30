@@ -50,20 +50,22 @@ The 3D apartment is the substrate for the demo. The confirm modal + Scene Receip
 
 Tools register on **`document.modelContext`** (with fallback to `navigator.modelContext`). Each tool has:
 - `execute` (async function) — not `handler`
-- `readOnlyHint: true` at top level for read-only tools
+- `annotations: { readOnlyHint: true }` for read-only tools
 
 Visible as **Available site tools** in ChatGPT's in-app browser or Chrome with `chrome://flags/#enable-webmcp-testing`.
 
 ## Run Locally
 
-Requires Node 20+, npm, and a WebMCP-enabled browser (Chrome 151+ with flag or ChatGPT in-app browser).
+Requires Node 20+, and a WebMCP-enabled browser (Chrome 151+ with flag or ChatGPT in-app browser).
 
 ```sh
 npm install
-npm run dev
+./node_modules/.bin/dotenv -e ./.env.defaults -- ./node_modules/.bin/turbo run dev --filter=editor --env-mode=loose
 ```
 
 Open **http://127.0.0.1:3002** (no query string required). The demo scene loads automatically, tools register on page load.
+
+**Note**: Root `npm run dev` or `bun dev` will fail on `@aedifex/ifc-converter`. Use the command above to run only the editor app.
 
 ## Scene Receipt
 

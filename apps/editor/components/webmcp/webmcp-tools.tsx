@@ -141,7 +141,19 @@ function cloneApartmentForVersionB(originalBuildingId: string, packageItems: Pac
   let lampsPlaced = 0
 
   if (firstLevel) {
+    const existingCatalogIds = new Set<string>()
+    for (const node of Object.values(clonedGraph.nodes)) {
+      if (node && node.type === 'item' && (node as any).asset?.id) {
+        existingCatalogIds.add((node as any).asset.id)
+      }
+    }
+
     for (const pkgItem of packageItems) {
+      if (existingCatalogIds.has(pkgItem.catalogId)) {
+        console.log(`[Room vibe] Skipping ${pkgItem.catalogId} - already present in Version B`)
+        continue
+      }
+
       const catalogItem = CATALOG_ITEMS.find((item) => item.id === pkgItem.catalogId)
       if (!catalogItem) {
         console.warn(`[Room vibe] Catalog item not found: ${pkgItem.catalogId}`)

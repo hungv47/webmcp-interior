@@ -28,7 +28,7 @@ export function ConfirmationModal({ packageId, packageName, onConfirm, onRefuse 
         <div className="mb-4">
           <h2 className="text-xl font-medium text-white">Apply {packageName}?</h2>
           <p className="mt-2 text-sm leading-relaxed text-white/60">
-            Your AI agent proposes to apply the <strong className="font-medium text-white">{packageName}</strong> lighting package.
+            Your AI agent proposes to apply the <strong className="font-medium text-white">{packageName}</strong> package.
           </p>
         </div>
         

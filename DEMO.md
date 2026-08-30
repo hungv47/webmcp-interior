@@ -95,32 +95,16 @@ This is Room vibe, a Scene Receipt demo. Do not click the viewport. Do not check
 - **The receipt persists and is copyable** - this is what you keep
 - Coach line correctly detects Version B is gone after Undo
 
-## Script 3: Confirm Flow with Lived-in Interior (Test furniture package)
+## Script 3: Confirm Flow with Warm Dusk after Undo
 
-Refresh the page and paste:
+After completing Script 2, you can test the Undo behavior:
 
-```
-This is Room vibe, a Scene Receipt demo. Do not click the viewport. Do not checkout.
+1. **Click Undo button (top right)** → Version B disappears
+2. **Next-step dock** updates to: "Version B is gone. Your Scene Receipt stays."
+3. Receipt card remains visible (green or last status)
+4. ChatGPT can still call `scene.read_receipt` to see the persisted receipt
 
-1. Inspect the scene with scene.inspect and list the available packages.
-2. Validate pkg_lived_in_01 with scene.validate_package.
-3. Apply it with scene.apply_package.
-4. After I confirm, use scene.focus_comparison to show me Version B.
-5. Read the Scene Receipt with scene.read_receipt.
-```
-
-**Expected**:
-- Agent calls `scene.inspect` → sees two packages: Warm Dusk and Lived-in Interior
-- Agent calls `scene.validate_package` for pkg_lived_in_01
-- Agent calls `scene.apply_package`
-- Dark modal appears: "Apply Lived-in Interior?"
-- **Click Confirm**
-- **Version B appears**: A complete apartment with furniture (sofa, coffee table, carpet, dining table, 4 dining chairs, bookshelf, indoor plant)
-- **Scene Receipt card** appears with "Lived-in Interior" package name
-- Agent calls `scene.focus_comparison` with "B" → camera points at furnished apartment
-- Agent calls `scene.read_receipt` → reads the Lived-in Interior receipt
-
-**Pass**: Version B is fully furnished with catalog SKUs, not just lamps. Receipt shows correct package name.
+**Pass**: Receipt persists after Undo, dock copy adapts to building count, Version B is gone.
 
 ## What's Being Judged
 

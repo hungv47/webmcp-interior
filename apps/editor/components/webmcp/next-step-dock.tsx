@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Copy, Check } from 'lucide-react'
+import { useScene } from '@aedifex/core'
 
 const CHATGPT_PROMPT = `This is Room vibe. Do not click the view. Do not checkout.
 
@@ -12,6 +13,8 @@ const CHATGPT_PROMPT = `This is Room vibe. Do not click the view. Do not checkou
 export function NextStepDock() {
   const [copied, setCopied] = useState(false)
   const [hasModelContext, setHasModelContext] = useState(false)
+  const [hasReceipt, setHasReceipt] = useState(false)
+  const [buildingCount, setBuildingCount] = useState(1)
 
   useEffect(() => {
     const checkModelContext = () => {
@@ -19,10 +22,37 @@ export function NextStepDock() {
       setHasModelContext(!!context)
     }
 
-    checkModelContext()
-    const interval = setInterval(checkModelContext, 1000)
+    const checkReceipt = () => {
+      const receiptEvent = (window as any).__webmcp_receipt_exists
+      setHasReceipt(!!receiptEvent)
+    }
 
-    return () => clearInterval(interval)
+    const checkBuildings = () => {
+      const scene = useScene.getState()
+      const buildings = Object.values(scene.nodes).filter((n) => n && n.type === 'building')
+      setBuildingCount(buildings.length)
+    }
+
+    checkModelContext()
+    checkReceipt()
+    checkBuildings()
+    
+    const interval = setInterval(() => {
+      checkModelContext()
+      checkReceipt()
+      checkBuildings()
+    }, 1000)
+
+    const handleReceiptCreated = () => {
+      setHasReceipt(true)
+    }
+
+    window.addEventListener('webmcp:receipt-created', handleReceiptCreated)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('webmcp:receipt-created', handleReceiptCreated)
+    }
   }, [])
 
   const handleCopy = async () => {
@@ -35,8 +65,18 @@ export function NextStepDock() {
     }
   }
 
+  const step3Text = hasReceipt && buildingCount < 2
+    ? 'Version B is gone. Your Scene Receipt stays.'
+    : buildingCount >= 2
+      ? 'Walk both rooms. Undo (top right) drops Version B. Your Scene Receipt stays.'
+      : 'Version A stays unchanged. Version B appears next door. Undo is top right.'
+
+  const positionClass = hasReceipt 
+    ? 'fixed right-6 bottom-6 z-40 max-w-md'
+    : 'fixed right-6 bottom-6 left-6 z-40 max-w-2xl'
+
   return (
-    <div className="pointer-events-auto fixed right-6 bottom-6 left-6 z-40 max-w-2xl">
+    <div className={`pointer-events-auto ${positionClass}`}>
       <div className="rounded-lg border border-white/10 bg-black/60 px-4 py-3 backdrop-blur">
         <div className="flex flex-col gap-2 text-sm text-white/70">
           <div className="flex items-start gap-3">
@@ -72,7 +112,7 @@ export function NextStepDock() {
             <span className="text-white/40">3.</span>
             <p className="flex-1">
               <span className="font-medium text-white/90">Confirm or Refuse on this page</span> when the modal appears.
-              Version A stays unchanged. Version B appears next door. Undo is top right.
+              {' '}{step3Text}
             </p>
           </div>
 
