@@ -420,7 +420,7 @@ export function WebMCPTools() {
               nodesCloned: result.clonedNodes,
               lampsPlaced: result.lampsPlaced,
               message:
-                'Version B created successfully as a complete apartment copy offset in +X with Warm Dusk lighting. Use scene.focus_comparison to view both versions.',
+                `Version B created successfully as a complete apartment copy offset in +X with ${pkg.name} applied. Use scene.focus_comparison to view both versions.`,
             }
           },
         })
@@ -468,7 +468,7 @@ export function WebMCPTools() {
                 return {
                   focused: 'B',
                   buildingId: versionBBuildingId,
-                  message: 'Camera focused on Version B (apartment with Warm Dusk package)',
+                  message: 'Camera focused on Version B (restyled apartment)',
                 }
               }
             }

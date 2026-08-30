@@ -51,7 +51,7 @@ This is Room vibe, a Scene Receipt demo. Do not click the viewport. Do not check
 
 **Pass**: Receipt shows "Refused by human", no Version B, apartment unchanged. The receipt is the product.
 
-## Script 2: Confirm Flow (Test the green receipt, test Version B proof, test Undo)
+## Script 2: Confirm Flow with Warm Dusk (Test the green receipt, test Version B proof, test Undo)
 
 Refresh the page and paste:
 
@@ -83,6 +83,7 @@ This is Room vibe, a Scene Receipt demo. Do not click the viewport. Do not check
 - Agent calls `scene.read_receipt` → reads and narrates the receipt
 - You can walk both apartments (use mouse to navigate)
 - **Click Undo button (top right)** → Version B disappears, receipt stays
+- **Coach line updates**: After Undo, shows "Version B is gone. Your Scene Receipt stays."
 
 **Pass**:
 - Receipt shows "Confirmed by human" with real before/after revisions
@@ -90,6 +91,34 @@ This is Room vibe, a Scene Receipt demo. Do not click the viewport. Do not check
 - Focus comparison moves the camera
 - Undo drops Version B
 - **The receipt persists and is copyable** - this is what you keep
+- Coach line correctly detects Version B is gone after Undo
+
+## Script 3: Confirm Flow with Lived-in Interior (Test furniture package)
+
+Refresh the page and paste:
+
+```
+This is Room vibe, a Scene Receipt demo. Do not click the viewport. Do not checkout.
+
+1. Inspect the scene with scene.inspect and list the available packages.
+2. Validate pkg_lived_in_01 with scene.validate_package.
+3. Apply it with scene.apply_package.
+4. After I confirm, use scene.focus_comparison to show me Version B.
+5. Read the Scene Receipt with scene.read_receipt.
+```
+
+**Expected**:
+- Agent calls `scene.inspect` → sees two packages: Warm Dusk and Lived-in Interior
+- Agent calls `scene.validate_package` for pkg_lived_in_01
+- Agent calls `scene.apply_package`
+- Dark modal appears: "Apply Lived-in Interior?"
+- **Click Confirm**
+- **Version B appears**: A complete apartment with furniture (sofa, coffee table, carpet, dining table, 4 dining chairs, bookshelf, indoor plant)
+- **Scene Receipt card** appears with "Lived-in Interior" package name
+- Agent calls `scene.focus_comparison` with "B" → camera points at furnished apartment
+- Agent calls `scene.read_receipt` → reads the Lived-in Interior receipt
+
+**Pass**: Version B is fully furnished with catalog SKUs, not just lamps. Receipt shows correct package name.
 
 ## What's Being Judged
 

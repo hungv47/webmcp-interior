@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useScene } from '@aedifex/core'
 import { webmcpEvents } from './events'
 import { getSceneReceipt } from './scene-receipt'
 
@@ -57,7 +58,7 @@ export function CoachLine() {
       case 'waiting':
         return 'No furniture buttons on this page. Open How it works, then open this URL in ChatGPT so it can inspect the 1-bed.'
       case 'apply':
-        return 'Ask ChatGPT to apply Warm Dusk. A confirm dialog will appear here.'
+        return 'Ask ChatGPT to apply a package (Warm Dusk or Lived-in Interior). A confirm dialog will appear here.'
       case 'confirm':
         return 'Confirm or Refuse on this page. ChatGPT cannot restyle until you do.'
       case 'done': {
@@ -65,7 +66,16 @@ export function CoachLine() {
         if (receipt?.confirmedBy === 'refused') {
           return 'You refused. Version A is unchanged. The Scene Receipt stays.'
         }
-        return 'Walk both rooms. Undo (top right) drops Version B. Your Scene Receipt stays.'
+
+        const scene = useScene.getState()
+        const buildings = Object.values(scene.nodes).filter((n) => n && n.type === 'building')
+        const versionBExists = buildings.length >= 2
+
+        if (versionBExists) {
+          return 'Walk both rooms. Undo (top right) drops Version B. Your Scene Receipt stays.'
+        } else {
+          return 'Version B is gone. Your Scene Receipt stays.'
+        }
       }
     }
   }
