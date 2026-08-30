@@ -3,29 +3,18 @@
 import { useEffect, useState } from 'react'
 import { webmcpEvents } from './events'
 import { getSceneReceipt } from './scene-receipt'
-import { useScene } from '@aedifex/core'
 
 export function CoachLine() {
   const [status, setStatus] = useState<'waiting' | 'apply' | 'confirm' | 'done'>('waiting')
 
   useEffect(() => {
-    const updateStatus = () => {
-      const receipt = getSceneReceipt()
-      if (receipt) {
-        setStatus('done')
-        return
-      }
-
-      // Default to waiting
-      setStatus('waiting')
-    }
-
     const handleInspectCalled = () => {
-      if (getSceneReceipt()) {
-        setStatus('done')
-      } else {
-        setStatus('apply')
-      }
+      setStatus((current) => {
+        const receipt = getSceneReceipt()
+        if (receipt) return 'done'
+        if (current === 'done') return 'done'
+        return 'apply'
+      })
     }
 
     const handleModalOpen = () => {
@@ -33,21 +22,27 @@ export function CoachLine() {
     }
 
     const handleModalClosed = () => {
-      const receipt = getSceneReceipt()
-      if (receipt) {
-        setStatus('done')
-      } else {
-        setStatus('apply')
-      }
+      setStatus((current) => {
+        const receipt = getSceneReceipt()
+        if (receipt) return 'done'
+        if (current === 'confirm') return 'apply'
+        return current
+      })
+    }
+
+    const checkReceipt = () => {
+      setStatus((current) => {
+        const receipt = getSceneReceipt()
+        if (receipt) return 'done'
+        return current
+      })
     }
 
     webmcpEvents.on('inspect-called', handleInspectCalled)
     webmcpEvents.on('modal-open', handleModalOpen)
     webmcpEvents.on('modal-closed', handleModalClosed)
 
-    updateStatus()
-
-    const interval = setInterval(updateStatus, 1000)
+    const interval = setInterval(checkReceipt, 1000)
 
     return () => {
       webmcpEvents.off('inspect-called', handleInspectCalled)
