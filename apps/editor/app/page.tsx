@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from 'react'
 import { Viewer, useViewer } from '@aedifex/viewer'
-import { useScene, clearSceneHistory } from '@aedifex/core'
+import { useScene, clearSceneHistory, ItemNode, type AnyNodeId } from '@aedifex/core'
 import { Undo2 } from 'lucide-react'
 import { WebMCPTools } from '@/components/webmcp/webmcp-tools'
 import { WebMCPOrchestrator } from '@/components/webmcp/webmcp-orchestrator'
 import { FirstVisitCard, HowItWorksButton } from '@/components/webmcp/first-visit-card'
-import { CoachLine } from '@/components/webmcp/coach-line'
+import { NextStepDock } from '@/components/webmcp/next-step-dock'
 import { FrameRoomCamera } from '@/components/webmcp/frame-room-camera'
+import { PACKAGES } from '@/lib/packages'
+import { CATALOG_ITEMS } from '@aedifex/editor'
 
 export default function Home() {
   const [isLoaded, setIsLoaded] = useState(false)
@@ -32,6 +34,57 @@ export default function Home() {
           materials: sceneData.materials,
           installedPlugins: sceneData.installedPlugins,
         })
+
+        const firstBuilding = Object.values(scene.nodes).find((n) => n && n.type === 'building')
+        if (firstBuilding) {
+          const firstLevel = Object.values(scene.nodes).find(
+            (n) => n && n.type === 'level' && n.parentId === firstBuilding.id
+          )
+
+          if (firstLevel) {
+            const furniturePackage = PACKAGES.pkg_lived_in_01
+            const nodesToCreate: { node: any; parentId: AnyNodeId }[] = []
+
+            for (const pkgItem of furniturePackage.items) {
+              const catalogItem = CATALOG_ITEMS.find((item) => item.id === pkgItem.catalogId)
+              if (!catalogItem) {
+                console.warn(`[Room vibe] Catalog item not found: ${pkgItem.catalogId}`)
+                continue
+              }
+
+              try {
+                const itemNode = ItemNode.parse({
+                  position: pkgItem.position,
+                  rotation: pkgItem.rotation,
+                  asset: {
+                    id: catalogItem.id,
+                    name: catalogItem.name,
+                    category: catalogItem.category,
+                    thumbnail: catalogItem.thumbnail,
+                    src: catalogItem.src,
+                    floorPlanUrl: catalogItem.floorPlanUrl,
+                    dimensions: catalogItem.dimensions,
+                    offset: catalogItem.offset || [0, 0, 0],
+                    rotation: catalogItem.rotation || [0, 0, 0],
+                    scale: catalogItem.scale || [1, 1, 1],
+                  },
+                })
+
+                nodesToCreate.push({
+                  node: itemNode,
+                  parentId: firstLevel.id as AnyNodeId,
+                })
+              } catch (error) {
+                console.error(`[Room vibe] Failed to parse item ${pkgItem.catalogId}:`, error)
+              }
+            }
+
+            if (nodesToCreate.length > 0) {
+              scene.createNodes(nodesToCreate)
+              console.log(`[Room vibe] Seeded Version A with ${nodesToCreate.length} furniture items`)
+            }
+          }
+        }
 
         const viewer = useViewer.getState()
         viewer.setSceneTheme('sunset')
@@ -109,7 +162,7 @@ export default function Home() {
       <WebMCPTools />
       <WebMCPOrchestrator />
       <FirstVisitCard />
-      <CoachLine />
+      <NextStepDock />
     </div>
   )
 }

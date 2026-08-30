@@ -14,10 +14,12 @@ The 1-bed is already furnished from Aedifex's catalog. Humans do not get a furni
 2. Open **http://127.0.0.1:3002** (no query string required)
 3. Hard-reload once
 4. You should see:
+   - **Furnished 3D room** (1-bed apartment with sofa, dining set, carpet, bookshelf, plant) — Version A is seeded with Lived-in Interior at load, so first paint is a home not an empty lot.
    - How it works card (what the product is, that tools live in ChatGPT, copyable prompt). Dismiss with "Show me the room". Reopen anytime via **How it works** top left.
+   - **Next-step dock** (bottom, persistent): Shows (1) open URL in ChatGPT (Sol/Terra, not Luna), (2) copy prompt, (3) confirm/refuse on page. Yellow "Waiting for ChatGPT" until `modelContext` appears, then green "6 site tools registered."
    - Camera framed on the 1-bed (drag to orbit). Sunset light, no zone overlays. Not empty sky.
    - "Room vibe" top left, Undo top right (disabled until a change)
-   - Coach line that tells you the next human step
+   - Next-step dock (bottom, persistent guide for the human path)
    - No editor sidebar, no AI tab, no furniture catalog buttons on the page. Furniture is already in the room; ChatGPT restyles it.
 
 **Tools visible**: In ChatGPT, check for "Available site tools" — should show 6 scene tools.
@@ -83,7 +85,7 @@ This is Room vibe, a Scene Receipt demo. Do not click the viewport. Do not check
 - Agent calls `scene.read_receipt` → reads and narrates the receipt
 - You can walk both apartments (use mouse to navigate)
 - **Click Undo button (top right)** → Version B disappears, receipt stays
-- **Coach line updates**: After Undo, shows "Version B is gone. Your Scene Receipt stays."
+- **Next-step dock** remains visible throughout the demo
 
 **Pass**:
 - Receipt shows "Confirmed by human" with real before/after revisions

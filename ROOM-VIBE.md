@@ -46,6 +46,8 @@ ChatGPT will not see site tools on localhost. Public HTTPS is a separate Hung GO
 - Confirm modal, one `createNodes` for Version B, overlay Undo. Receipt collapse does not destroy data.
 - Warm Dusk GLBs are Supabase CDN. Offline they miss. `table-lamp` is CDN-only.
 - `scene.inspect` returns item names, `availablePackages`, and `catalogSkuCount`. It does not dump 111 SKUs.
+- **Version A is seeded with Lived-in Interior furniture at load** (sofa, dining set, carpet, bookshelf, plant) so first paint is a furnished 1-bed, not an empty lot.
+- **Next-step dock** appears after onboarding, showing: open URL in ChatGPT (Sol/Terra), copy prompt, confirm/refuse on page. Dock detects `modelContext` and guides accordingly.
 
 ## Next (Hung GO unless listed)
 
