@@ -93,7 +93,7 @@
       "type": "slab",
       "name": "Plancher",
       "parentId": "level_pojp0mw3qssu110w",
-      "visible": true,
+      "visible": false,
       "metadata": {},
       "polygon": [
         [
@@ -146,7 +146,7 @@
       "type": "roof",
       "name": "Roof 1",
       "parentId": "level_bbyvfs9qwzh4arjf",
-      "visible": true,
+      "visible": false,
       "metadata": {},
       "position": [
         10.25,
@@ -2723,7 +2723,7 @@
       "type": "roof",
       "name": "Roof 2",
       "parentId": "level_pojp0mw3qssu110w",
-      "visible": true,
+      "visible": false,
       "metadata": {},
       "position": [
         1,
