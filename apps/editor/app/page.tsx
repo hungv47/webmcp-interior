@@ -73,11 +73,11 @@ export default function Home() {
 
         const firstBuilding = Object.values(scene.nodes).find((n) => n && n.type === 'building')
         if (firstBuilding) {
-          const firstLevel = Object.values(scene.nodes).find(
-            (n) => n && n.type === 'level' && n.parentId === firstBuilding.id
+          const groundLevel = Object.values(scene.nodes).find(
+            (n) => n && n.type === 'level' && (n as any).level === 0
           )
 
-          if (firstLevel) {
+          if (groundLevel) {
             const furniturePackage = PACKAGES.pkg_lived_in_01
             const nodesToCreate: { node: any; parentId: AnyNodeId }[] = []
 
@@ -108,7 +108,7 @@ export default function Home() {
 
                 nodesToCreate.push({
                   node: itemNode,
-                  parentId: firstLevel.id as AnyNodeId,
+                  parentId: groundLevel.id as AnyNodeId,
                 })
               } catch (error) {
                 console.error(`[Room vibe] Failed to parse item ${pkgItem.catalogId}:`, error)
