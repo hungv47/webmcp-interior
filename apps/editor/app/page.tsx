@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import { Viewer, useViewer } from '@aedifex/viewer'
 import { useScene, clearSceneHistory, ItemNode, type AnyNodeId } from '@aedifex/core'
 import { Undo2 } from 'lucide-react'
@@ -16,7 +16,24 @@ export default function Home() {
   const [isLoaded, setIsLoaded] = useState(false)
   const [canUndo, setCanUndo] = useState(false)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('viewer-preferences')
+        if (stored) {
+          const prefs = JSON.parse(stored)
+          prefs.state = prefs.state || {}
+          delete prefs.state.renderContext
+          delete prefs.state.levelMode
+          delete prefs.state.showZones
+          delete prefs.state.showGuides
+          localStorage.setItem('viewer-preferences', JSON.stringify(prefs))
+        }
+      } catch (error) {
+        console.error('[Room vibe] Failed to clear viewer prefs:', error)
+      }
+    }
+
     const viewer = useViewer.getState()
     
     viewer.setSceneTheme('sunset')
@@ -31,7 +48,9 @@ export default function Home() {
       showZones: viewer.showZones,
       showGuides: viewer.showGuides,
     })
+  }, [])
 
+  useEffect(() => {
     async function loadDemoScene() {
       try {
         const response = await fetch('/demos/demo_1.json')
