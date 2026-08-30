@@ -6,6 +6,8 @@ import { useScene, clearSceneHistory } from '@aedifex/core'
 import { Undo2 } from 'lucide-react'
 import { WebMCPTools } from '@/components/webmcp/webmcp-tools'
 import { WebMCPOrchestrator } from '@/components/webmcp/webmcp-orchestrator'
+import { FirstVisitCard } from '@/components/webmcp/first-visit-card'
+import { CoachLine } from '@/components/webmcp/coach-line'
 
 export default function Home() {
   const [isLoaded, setIsLoaded] = useState(false)
@@ -97,6 +99,8 @@ export default function Home() {
 
       <WebMCPTools />
       <WebMCPOrchestrator />
+      <FirstVisitCard />
+      <CoachLine />
     </div>
   )
 }

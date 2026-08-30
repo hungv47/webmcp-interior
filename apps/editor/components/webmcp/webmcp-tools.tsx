@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { emitter, useScene, type AnyNodeId, ItemNode, BuildingNode, LevelNode, cloneSceneGraph } from '@aedifex/core'
 import { PACKAGES, validatePackage, type PackageItem } from '@/lib/packages'
 import { getSceneReceipt, setSceneReceipt, type SceneReceipt } from './scene-receipt'
 import { showConfirmationModal } from './confirmation-modal'
 import { CATALOG_ITEMS } from '@aedifex/editor'
+import { webmcpEvents } from './events'
 
 declare global {
   interface Navigator {
@@ -245,6 +246,8 @@ export function WebMCPTools() {
             const levels = Object.values(nodes).filter((n) => n && n.type === 'level')
             const revision = useScene.temporal.getState().pastStates.length
 
+            webmcpEvents.emit('inspect-called')
+
             return {
               zones: zones.map((z) => ({
                 id: z.id,
@@ -286,6 +289,8 @@ export function WebMCPTools() {
             const scene = useScene.getState()
             const packageId = args.packageId as string
             const validation = validatePackage(packageId, scene)
+
+            webmcpEvents.emit('inspect-called')
 
             if (!validation.valid) {
               return { valid: false, error: validation.error }
@@ -481,6 +486,7 @@ export function WebMCPTools() {
           },
           execute: async () => {
             const revision = useScene.temporal.getState().pastStates.length
+            webmcpEvents.emit('inspect-called')
             return {
               canWrite: true,
               canCheckout: false,
@@ -506,6 +512,7 @@ export function WebMCPTools() {
           },
           execute: async () => {
             const currentReceipt = getSceneReceipt()
+            webmcpEvents.emit('inspect-called')
             if (!currentReceipt) {
               return { exists: false, message: 'No receipt found' }
             }

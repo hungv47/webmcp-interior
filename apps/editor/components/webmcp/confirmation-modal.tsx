@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { webmcpEvents } from './events'
 
 interface ConfirmationModalProps {
   packageId: string
@@ -11,6 +12,13 @@ interface ConfirmationModalProps {
 
 export function ConfirmationModal({ packageId, packageName, onConfirm, onRefuse }: ConfirmationModalProps) {
   const [isVisible, setIsVisible] = useState(true)
+
+  useEffect(() => {
+    webmcpEvents.emit('modal-open')
+    return () => {
+      webmcpEvents.emit('modal-closed')
+    }
+  }, [])
 
   if (!isVisible) return null
 

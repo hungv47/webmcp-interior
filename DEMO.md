@@ -13,6 +13,8 @@ Test Room vibe's Scene Receipt system in ChatGPT's in-app browser or Chrome 151+
    - 3D room (1-bed apartment) - this is the substrate, not the product
    - "Room vibe" text top left
    - Undo button top right (disabled until a change)
+   - **First visit**: A card overlays the room with three short lines about ChatGPT → confirm → receipt. Click "Got it" or "Skip" to dismiss. It remembers and won't show again.
+   - **Coach line** (bottom left): Changes based on state — waiting for inspect, ask to apply, confirm on page, receipt stays.
    - No editor sidebar, no AI tab, no blank canvas message
 
 **Tools visible**: In ChatGPT, check for "Available site tools" — should show 6 scene tools.
