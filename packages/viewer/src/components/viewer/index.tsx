@@ -587,7 +587,7 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(
     >
       <ScreenshotRendererBridge />
       <FrameLimiter fps={maxFps} paused={renderPaused} />
-      <ViewerCamera />
+      {!children && <ViewerCamera />}
       <PointerRaycastLayers />
       <GPUDeviceWatcher />
       <ToneMappingExposure />
