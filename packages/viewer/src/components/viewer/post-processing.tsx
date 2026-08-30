@@ -225,6 +225,7 @@ const PostProcessingPasses = ({
     l.set(OVERLAY_LAYER)
     return l
   }, [])
+  const renderContext = useViewer((s) => s.renderContext)
   const hoverHighlightMode = useViewer((s) => s.hoverHighlightMode)
   const hoverVisibleColor = useMemo(() => uniform(new Color(DEFAULT_HOVER_STYLE.visibleColor)), [])
   const hoverHiddenColor = useMemo(() => uniform(new Color(DEFAULT_HOVER_STYLE.hiddenColor)), [])
@@ -392,7 +393,15 @@ const PostProcessingPasses = ({
       // layer, kept out of the depth/normal MRT above so the ink + SSGI ignore
       // them, then composited on top of the final image below.
       const overlayPass = pass(scene, camera)
-      overlayPass.setLayers(overlayLayers)
+      // Only render overlay layer in editor context, skip in viewer mode
+      if (renderContext === 'editor') {
+        overlayPass.setLayers(overlayLayers)
+      } else {
+        // Set to empty layer mask so no gizmos render
+        const emptyLayers = new Layers()
+        emptyLayers.set(999) // Non-existent layer
+        overlayPass.setLayers(emptyLayers)
+      }
       const overlayColor = overlayPass.getTextureNode('output')
 
       const scenePassColor = scenePass.getTextureNode('output')
@@ -645,6 +654,7 @@ const PostProcessingPasses = ({
     inkOpacityOverride,
     pipelineVersion,
     projectId,
+    renderContext,
     renderer,
     scene,
     shading,

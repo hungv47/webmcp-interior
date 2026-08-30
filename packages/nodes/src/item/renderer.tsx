@@ -188,6 +188,7 @@ const BrokenItemFallback = ({ node }: { node: ItemNode }) => {
   const handlers = useNodeEvents(node, 'item')
   const shading = useViewer((s) => s.shading)
   const isExporting = useViewer((s) => s.isExporting)
+  const renderContext = useViewer((s) => s.renderContext)
   const [w, h, d] = getScaledDimensions(node)
   const material = useMemo(() => {
     const next = createDefaultMaterial('#ef4444', 1, shading) as MutableMaterial
@@ -200,7 +201,8 @@ const BrokenItemFallback = ({ node }: { node: ItemNode }) => {
 
   // Debug affordance only — a bake must never ship the red placeholder box
   // (observed baked into a prod artifact when an item GLB 504'd mid-capture).
-  if (isExporting) return null
+  // Also hide in viewer/consumer mode.
+  if (isExporting || renderContext === 'viewer') return null
 
   return (
     <mesh position-y={h / 2} {...handlers}>

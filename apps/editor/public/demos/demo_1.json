@@ -93,7 +93,7 @@
       "type": "slab",
       "name": "Plancher",
       "parentId": "level_pojp0mw3qssu110w",
-      "visible": false,
+      "visible": true,
       "metadata": {},
       "polygon": [
         [
