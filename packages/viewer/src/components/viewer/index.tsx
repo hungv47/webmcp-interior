@@ -528,7 +528,7 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(
   }
   return (
     <Canvas
-      camera={{ position: [50, 50, 50], fov: 50 }}
+      camera={{ position: [11, 1.6, 3], fov: 50 }}
       className={`transition-colors duration-700 ${
         transparentBackground ? 'bg-transparent' : isDark ? 'bg-[#1f2433]' : 'bg-[#fafafa]'
       }`}

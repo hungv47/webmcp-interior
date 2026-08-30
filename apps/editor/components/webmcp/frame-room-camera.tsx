@@ -169,16 +169,14 @@ export function FrameRoomCamera() {
     return true
   }
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const pose = initialPose()
     if (pose) {
       camera.position.set(pose.position[0], pose.position[1], pose.position[2])
       camera.lookAt(pose.target[0], pose.target[1], pose.target[2])
       camera.updateProjectionMatrix()
     }
-  }, [camera])
 
-  useLayoutEffect(() => {
     if (frameInitial()) return undefined
     let attempts = 0
     let frame = 0
