@@ -17,6 +17,21 @@ export default function Home() {
   const [canUndo, setCanUndo] = useState(false)
 
   useEffect(() => {
+    const viewer = useViewer.getState()
+    
+    viewer.setSceneTheme('sunset')
+    viewer.setRenderContext('viewer')
+    viewer.setLevelMode('stacked')
+    viewer.setShowZones(false)
+    viewer.setShowGuides(false)
+    
+    console.log('[Room vibe] Viewer settings applied:', {
+      renderContext: viewer.renderContext,
+      levelMode: viewer.levelMode,
+      showZones: viewer.showZones,
+      showGuides: viewer.showGuides,
+    })
+
     async function loadDemoScene() {
       try {
         const response = await fetch('/demos/demo_1.json')
