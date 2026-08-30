@@ -18,22 +18,11 @@ export default function Home() {
 
   useLayoutEffect(() => {
     if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('viewer-preferences')
-        if (stored) {
-          const prefs = JSON.parse(stored)
-          prefs.state = prefs.state || {}
-          delete prefs.state.renderContext
-          delete prefs.state.levelMode
-          delete prefs.state.showZones
-          delete prefs.state.showGuides
-          localStorage.setItem('viewer-preferences', JSON.stringify(prefs))
-        }
-      } catch (error) {
-        console.error('[Room vibe] Failed to clear viewer prefs:', error)
-      }
+      localStorage.removeItem('viewer-preferences')
     }
+  }, [])
 
+  useEffect(() => {
     const viewer = useViewer.getState()
     
     viewer.setSceneTheme('sunset')
@@ -42,12 +31,25 @@ export default function Home() {
     viewer.setShowZones(false)
     viewer.setShowGuides(false)
     
-    console.log('[Room vibe] Viewer settings applied:', {
-      renderContext: viewer.renderContext,
-      levelMode: viewer.levelMode,
-      showZones: viewer.showZones,
-      showGuides: viewer.showGuides,
-    })
+    const checkAndReapply = () => {
+      const current = useViewer.getState()
+      if (current.renderContext !== 'viewer' || current.levelMode !== 'stacked' || 
+          current.showZones !== false || current.showGuides !== false) {
+        console.log('[Room vibe] Persist rehydrated, reapplying consumer settings')
+        current.setRenderContext('viewer')
+        current.setLevelMode('stacked')
+        current.setShowZones(false)
+        current.setShowGuides(false)
+      }
+    }
+    
+    const timers = [
+      setTimeout(checkAndReapply, 50),
+      setTimeout(checkAndReapply, 100),
+      setTimeout(checkAndReapply, 200),
+    ]
+    
+    return () => timers.forEach(clearTimeout)
   }, [])
 
   useEffect(() => {
