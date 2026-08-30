@@ -86,13 +86,6 @@ export default function Home() {
           }
         }
 
-        const viewer = useViewer.getState()
-        viewer.setSceneTheme('sunset')
-        viewer.setRenderContext('viewer')
-        viewer.setLevelMode('stacked')
-        viewer.setShowZones(false)
-        viewer.setShowGuides(false)
-
         clearSceneHistory()
 
         setIsLoaded(true)
