@@ -9,6 +9,14 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'Room vibe',
   description: 'A WebMCP Scene Receipt demo. Send ChatGPT into a live 1-bed apartment.',
+  openGraph: {
+    title: 'Room vibe',
+    description: 'A WebMCP Scene Receipt demo. Send ChatGPT into a live 1-bed apartment.',
+  },
+  twitter: {
+    title: 'Room vibe',
+    card: 'summary_large_image',
+  },
 }
 
 const geistSans = localFont({
