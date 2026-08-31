@@ -71,9 +71,10 @@ export default function Home() {
           installedPlugins: sceneData.installedPlugins,
         })
 
-        const firstBuilding = Object.values(scene.nodes).find((n) => n && n.type === 'building')
+        const updatedScene = useScene.getState()
+        const firstBuilding = Object.values(updatedScene.nodes).find((n) => n && n.type === 'building')
         if (firstBuilding) {
-          const groundLevel = Object.values(scene.nodes).find(
+          const groundLevel = Object.values(updatedScene.nodes).find(
             (n) => n && n.type === 'level' && (n as any).level === 0
           )
 
@@ -116,7 +117,7 @@ export default function Home() {
             }
 
             if (nodesToCreate.length > 0) {
-              scene.createNodes(nodesToCreate)
+              updatedScene.createNodes(nodesToCreate)
               console.log(`[Room vibe] Seeded Version A with ${nodesToCreate.length} furniture items`)
             }
           }
