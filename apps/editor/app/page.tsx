@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useLayoutEffect, useState } from 'react'
-import { Viewer, useViewer } from '@aedifex/viewer'
-import { useScene, clearSceneHistory, ItemNode, emitter, type AnyNodeId } from '@aedifex/core'
+import { Viewer, useViewer, snapLevelsToTruePositions } from '@aedifex/viewer'
+import { useScene, clearSceneHistory, ItemNode, emitter, type AnyNodeId, sceneRegistry } from '@aedifex/core'
 import { Undo2 } from 'lucide-react'
 import { WebMCPTools } from '@/components/webmcp/webmcp-tools'
 import { WebMCPOrchestrator } from '@/components/webmcp/webmcp-orchestrator'
@@ -127,6 +127,26 @@ export default function Home() {
         const groundLevel = Object.values(scene.nodes).find(
           (n) => n && n.type === 'level' && (n as any).level === 0
         )
+
+        const waitForRegistry = () => {
+          return new Promise<void>((resolve) => {
+            const checkRegistry = () => {
+              const hasLevels = sceneRegistry.byType.level && sceneRegistry.byType.level.size > 0
+              if (hasLevels) {
+                resolve()
+              } else {
+                requestAnimationFrame(checkRegistry)
+              }
+            }
+            requestAnimationFrame(checkRegistry)
+          })
+        }
+
+        await waitForRegistry()
+
+        snapLevelsToTruePositions()
+        console.log('[Room vibe] Snapped levels to stacked positions')
+
         if (groundLevel) {
           setTimeout(() => {
             emitter.emit('camera-controls:view', { nodeId: groundLevel.id })
