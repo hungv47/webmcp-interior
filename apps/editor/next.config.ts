@@ -6,6 +6,7 @@ const appDirectory = path.dirname(fileURLToPath(import.meta.url))
 const portableBuild = process.env.AEDIFEX_PORTABLE_BUILD === '1'
 
 const nextConfig: NextConfig = {
+  output: 'export',
   ...(portableBuild
     ? { output: 'standalone' as const, outputFileTracingRoot: path.join(appDirectory, '../..') }
     : {}),
