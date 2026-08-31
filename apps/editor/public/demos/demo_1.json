@@ -204,7 +204,7 @@
       "type": "item",
       "name": "window-large",
       "parentId": "wall_q455ycyoqnjxjcdr",
-      "visible": true,
+      "visible": false,
       "metadata": {},
       "position": [
         2,
@@ -436,7 +436,7 @@
       "type": "item",
       "name": "Window-double",
       "parentId": "wall_lyuq9em1b88jx85g",
-      "visible": true,
+      "visible": false,
       "metadata": {},
       "position": [
         4.5,
@@ -484,7 +484,7 @@
       "type": "item",
       "name": "Window-rectangle",
       "parentId": "wall_lyuq9em1b88jx85g",
-      "visible": true,
+      "visible": false,
       "metadata": {},
       "position": [
         7.5,
@@ -532,7 +532,7 @@
       "type": "item",
       "name": "Window-double",
       "parentId": "wall_lyuq9em1b88jx85g",
-      "visible": true,
+      "visible": false,
       "metadata": {},
       "position": [
         10.5,
@@ -580,7 +580,7 @@
       "type": "item",
       "name": "Window-double",
       "parentId": "wall_lyuq9em1b88jx85g",
-      "visible": true,
+      "visible": false,
       "metadata": {},
       "position": [
         14,
@@ -628,7 +628,7 @@
       "type": "item",
       "name": "Window-double",
       "parentId": "wall_lyuq9em1b88jx85g",
-      "visible": true,
+      "visible": false,
       "metadata": {},
       "position": [
         15.5,
@@ -676,7 +676,7 @@
       "type": "item",
       "name": "Window-double",
       "parentId": "wall_lyuq9em1b88jx85g",
-      "visible": true,
+      "visible": false,
       "metadata": {},
       "position": [
         17,
