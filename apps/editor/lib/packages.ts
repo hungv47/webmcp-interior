@@ -50,52 +50,52 @@ export const PACKAGES: Record<string, Package> = {
     items: [
       {
         catalogId: 'sofa',
-        position: [9.3, 0, 4.5],
-        rotation: [0, 0, 0],
+        position: [-3, 0, 1.5],
+        rotation: [0, Math.PI / 2, 0],
       },
       {
         catalogId: 'coffee-table',
-        position: [10.5, 0, 3],
+        position: [-1.5, 0, 1.5],
         rotation: [0, 0, 0],
       },
       {
         catalogId: 'rectangular-carpet',
-        position: [10, 0, 3.5],
+        position: [-2, 0, 1.5],
         rotation: [0, 0, 0],
       },
       {
         catalogId: 'dining-table',
-        position: [11, 0, 1],
+        position: [2, 0, -2],
         rotation: [0, 0, 0],
       },
       {
         catalogId: 'dining-chair',
-        position: [10, 0, 1.5],
-        rotation: [0, Math.PI / 2, 0],
+        position: [1, 0, -1],
+        rotation: [0, 0, 0],
       },
       {
         catalogId: 'dining-chair',
-        position: [12, 0, 1.5],
-        rotation: [0, -Math.PI / 2, 0],
+        position: [3, 0, -1],
+        rotation: [0, 0, 0],
       },
       {
         catalogId: 'dining-chair',
-        position: [10, 0, 0.5],
-        rotation: [0, Math.PI / 2, 0],
-      },
-      {
-        catalogId: 'dining-chair',
-        position: [12, 0, 0.5],
-        rotation: [0, -Math.PI / 2, 0],
-      },
-      {
-        catalogId: 'bookshelf',
-        position: [12.7, 0, 5],
+        position: [1, 0, -3],
         rotation: [0, Math.PI, 0],
       },
       {
+        catalogId: 'dining-chair',
+        position: [3, 0, -3],
+        rotation: [0, Math.PI, 0],
+      },
+      {
+        catalogId: 'bookshelf',
+        position: [4, 0, 2.5],
+        rotation: [0, -Math.PI / 2, 0],
+      },
+      {
         catalogId: 'indoor-plant',
-        position: [9.3, 0, 1],
+        position: [-4, 0, -3],
         rotation: [0, 0, 0],
       },
     ],

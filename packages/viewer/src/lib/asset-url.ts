@@ -1,13 +1,13 @@
 import { loadAssetUrl } from '@aedifex/core'
 
-export const ASSETS_CDN_URL = process.env.NEXT_PUBLIC_ASSETS_CDN_URL || 'https://editor.aedifex.com'
+export const ASSETS_CDN_URL = process.env.NEXT_PUBLIC_ASSETS_CDN_URL || ''
 
 /**
  * Resolves an asset URL to the appropriate format:
  * - If URL starts with http:// or https://, return as-is (external URL)
  * - If URL starts with asset://, resolve from IndexedDB storage
- * - If URL starts with /, prepend CDN URL (absolute path)
- * - Otherwise, prepend CDN URL (relative path)
+ * - If URL starts with /, use as same-origin path (no CDN prefix)
+ * - Otherwise, prepend / for same-origin path
  */
 export async function resolveAssetUrl(url: string | undefined | null): Promise<string | null> {
   if (!url) return null
@@ -22,8 +22,14 @@ export async function resolveAssetUrl(url: string | undefined | null): Promise<s
     return loadAssetUrl(url)
   }
 
-  // Absolute or relative path - prepend CDN URL
+  // Absolute path - use same-origin if no CDN configured
   const normalizedPath = url.startsWith('/') ? url : `/${url}`
+  
+  // If CDN URL is empty or not configured, return same-origin path
+  if (!ASSETS_CDN_URL || ASSETS_CDN_URL === '') {
+    return normalizedPath
+  }
+  
   return `${ASSETS_CDN_URL}${normalizedPath}`
 }
 
@@ -45,7 +51,13 @@ export function resolveCdnUrl(url: string | undefined | null): string | null {
     return null
   }
 
-  // Absolute or relative path - prepend CDN URL
+  // Absolute path - use same-origin if no CDN configured
   const normalizedPath = url.startsWith('/') ? url : `/${url}`
+  
+  // If CDN URL is empty or not configured, return same-origin path
+  if (!ASSETS_CDN_URL || ASSETS_CDN_URL === '') {
+    return normalizedPath
+  }
+  
   return `${ASSETS_CDN_URL}${normalizedPath}`
 }

@@ -63,39 +63,8 @@ function shiftPose(pose: Pose, offset: [number, number, number]): Pose {
 }
 
 function wallFitPose(): Pose | null {
-  const nodes = useScene.getState().nodes
-  let minX = Number.POSITIVE_INFINITY
-  let minZ = Number.POSITIVE_INFINITY
-  let maxX = Number.NEGATIVE_INFINITY
-  let maxZ = Number.NEGATIVE_INFINITY
-
-  for (const node of Object.values(nodes)) {
-    if (!node || node.type !== 'wall') continue
-    const start = (node as { start?: unknown }).start
-    const end = (node as { end?: unknown }).end
-    for (const point of [start, end]) {
-      if (!Array.isArray(point) || point.length < 2) continue
-      const x = Number(point[0])
-      const z = Number(point[1])
-      if (!Number.isFinite(x) || !Number.isFinite(z)) continue
-      minX = Math.min(minX, x)
-      maxX = Math.max(maxX, x)
-      minZ = Math.min(minZ, z)
-      maxZ = Math.max(maxZ, z)
-    }
-  }
-
-  if (!Number.isFinite(minX)) return null
-
-  const cx = (minX + maxX) / 2
-  const cz = (minZ + maxZ) / 2
-  const maxExtent = Math.max(maxX - minX, maxZ - minZ)
-  const distance = Math.max(maxExtent * 1.4, 15)
-  const height = Math.max(maxExtent * 0.8, 10)
-  return {
-    position: [cx + distance * 0.7, height, cz + distance * 0.7],
-    target: [cx, 1.2, cz],
-  }
+  // Use stored camera from ground level instead of computed fit
+  return initialPose()
 }
 
 function objectFitPose(nodeId: string): Pose | null {
@@ -232,26 +201,13 @@ export function FrameRoomCamera() {
     const handleFit = ({ bounds }: CameraControlFitSceneEvent) => {
       const control = controls.current
       if (!control) return
-      if (!bounds) {
-        const pose = wallFitPose()
-        if (pose) applyPose(control, pose, true)
+      
+      // Always use stored camera pose, ignore computed bounds
+      const pose = wallFitPose()
+      if (pose) {
+        applyPose(control, pose, true)
         invalidate()
-        return
       }
-      const [cx, cz] = bounds.center
-      const [w, d] = bounds.size
-      const maxExtent = Math.max(w, d)
-      const distance = Math.max(maxExtent * 1.4, 15)
-      const height = Math.max(maxExtent * 0.8, 10)
-      applyPose(
-        control,
-        {
-          position: [cx + distance * 0.7, height, cz + distance * 0.7],
-          target: [cx, 1.2, cz],
-        },
-        true,
-      )
-      invalidate()
     }
 
     emitter.on('camera-controls:view', lookAtNode)
@@ -268,7 +224,7 @@ export function FrameRoomCamera() {
     <CameraControls
       makeDefault
       maxDistance={120}
-      maxPolarAngle={Math.PI / 2 - 0.1}
+      maxPolarAngle={Math.PI / 2}
       minDistance={2}
       minPolarAngle={0}
       ref={controls}
