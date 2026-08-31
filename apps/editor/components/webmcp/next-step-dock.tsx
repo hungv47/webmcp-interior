@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Copy, Check } from 'lucide-react'
+import { Copy, Check, Sparkles } from 'lucide-react'
 import { useScene } from '@aedifex/core'
 
 const CHATGPT_PROMPT = `This is Room vibe. Do not click the view. Do not checkout.
@@ -85,61 +85,84 @@ export function NextStepDock() {
 
   return (
     <div className={`pointer-events-auto ${positionClass}`}>
-      <div className="rounded-lg border border-white/10 bg-black/60 px-4 py-3 backdrop-blur">
-        <div className="flex flex-col gap-2 text-sm text-white/70">
+      <div className="rounded-2xl border border-white/20 bg-gradient-to-b from-black/80 to-black/90 px-5 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+        <div className="flex flex-col gap-3.5 text-[15px]">
           <div className="flex items-start gap-3">
-            <span className="text-white/40">1.</span>
-            <p className="flex-1">
-              Open this same URL in <span className="font-medium text-white/90">ChatGPT in-app browser</span>{' '}
-              (Sol or Terra model). Luna has WebMCP off.
+            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-medium text-white/60">
+              1
+            </span>
+            <p className="flex-1 text-white/80">
+              Open this URL in <span className="font-medium text-white">ChatGPT in-app browser</span>{' '}
+              (Sol or Terra model)
             </p>
           </div>
 
           <div className="flex items-start gap-3">
-            <span className="text-white/40">2.</span>
-            <div className="flex flex-1 items-center justify-between gap-3">
-              <p className="flex-1">
-                Copy and paste the prompt below. ChatGPT will see six site tools.
+            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-medium text-white/60">
+              2
+            </span>
+            <div className="flex flex-1 flex-col gap-2">
+              <p className="text-white/80">
+                Paste the prompt below. ChatGPT will register six site tools.
               </p>
-              <button
-                className="flex items-center gap-1 rounded px-2 py-1 text-xs text-white/50 hover:bg-white/10 hover:text-white/90"
-                onClick={handleCopy}
-                type="button"
-              >
-                {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                {copied ? 'Copied' : 'Copy prompt'}
-              </button>
+              <div className="rounded-xl border border-white/10 bg-black/60 p-3.5 backdrop-blur-sm">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-xs font-medium text-white/50">Starter prompt</p>
+                  <button
+                    className="flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1.5 text-xs font-medium text-white/70 backdrop-blur-sm transition-all hover:bg-white/20 hover:text-white"
+                    onClick={handleCopy}
+                    type="button"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="h-3 w-3" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3 w-3" />
+                        Copy
+                      </>
+                    )}
+                  </button>
+                </div>
+                <pre className="whitespace-pre-wrap text-[13px] leading-relaxed text-white/70">{CHATGPT_PROMPT}</pre>
+              </div>
             </div>
           </div>
 
-          <div className="ml-6 rounded border border-white/10 bg-black/40 px-3 py-2">
-            <pre className="whitespace-pre-wrap text-xs leading-relaxed text-white/60">{CHATGPT_PROMPT}</pre>
-          </div>
-
           <div className="flex items-start gap-3">
-            <span className="text-white/40">3.</span>
-            <p className="flex-1">
-              <span className="font-medium text-white/90">Confirm or Refuse on this page</span> when the modal appears.
+            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-medium text-white/60">
+              3
+            </span>
+            <p className="flex-1 text-white/80">
+              <span className="font-medium text-white">Confirm or Refuse</span> when the modal appears.
               {' '}{step3Text}
             </p>
           </div>
 
           {!hasModelContext && (
-            <div className="mt-2 rounded-lg border border-yellow-500/20 bg-yellow-500/10 px-3 py-2">
-              <p className="text-xs text-yellow-200/80">
-                <span className="font-medium">Waiting for ChatGPT.</span> This page needs to be opened inside
-                ChatGPT's in-app browser to register site tools. For local testing in Chrome, enable
-                chrome://flags/#enable-webmcp-testing.
-              </p>
+            <div className="mt-1 flex gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 backdrop-blur-sm">
+              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-400/80" />
+              <div>
+                <p className="text-sm font-medium text-amber-200/90">Waiting for ChatGPT</p>
+                <p className="mt-1 text-xs leading-relaxed text-amber-200/70">
+                  Open this page in ChatGPT's browser to register site tools. For local testing,
+                  enable chrome://flags/#enable-webmcp-testing.
+                </p>
+              </div>
             </div>
           )}
 
           {hasModelContext && (
-            <div className="mt-2 rounded-lg border border-green-500/20 bg-green-500/10 px-3 py-2">
-              <p className="text-xs text-green-200/80">
-                <span className="font-medium">6 site tools registered.</span> ChatGPT can now inspect and
-                restyle this apartment. No in-page chat here — everything happens through ChatGPT.
-              </p>
+            <div className="mt-1 flex gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 backdrop-blur-sm">
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+              <div>
+                <p className="text-sm font-medium text-emerald-200/90">6 tools registered</p>
+                <p className="mt-1 text-xs leading-relaxed text-emerald-200/70">
+                  ChatGPT can now inspect and restyle this apartment. Everything happens through ChatGPT.
+                </p>
+              </div>
             </div>
           )}
         </div>

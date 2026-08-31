@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Minimize2, Copy, Check } from 'lucide-react'
+import { Minimize2, Copy, Check, FileCheck } from 'lucide-react'
 
 export interface SceneReceipt {
   packageId: string
@@ -23,24 +23,32 @@ export function SceneReceiptCard({ receipt, onCollapse }: SceneReceiptCardProps)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const statusColor =
+  const statusConfig =
     receipt.confirmedBy === 'human'
-      ? 'border-green-500/60 bg-green-500/10 text-green-600'
+      ? { 
+          border: 'border-emerald-500/30', 
+          bg: 'bg-emerald-500/15', 
+          text: 'text-emerald-400',
+          label: 'Confirmed'
+        }
       : receipt.confirmedBy === 'refused'
-        ? 'border-red-500/60 bg-red-500/10 text-red-600'
-        : 'border-yellow-500/60 bg-yellow-500/10 text-yellow-600'
-
-  const statusLabel =
-    receipt.confirmedBy === 'human'
-      ? 'Confirmed by human'
-      : receipt.confirmedBy === 'refused'
-        ? 'Refused by human'
-        : 'Blocked'
+        ? { 
+            border: 'border-red-500/30', 
+            bg: 'bg-red-500/15', 
+            text: 'text-red-400',
+            label: 'Refused'
+          }
+        : { 
+            border: 'border-amber-500/30', 
+            bg: 'bg-amber-500/15', 
+            text: 'text-amber-400',
+            label: 'Blocked'
+          }
 
   const handleCopy = async () => {
     const text = `Scene Receipt - ${receipt.packageName}
 Package: ${receipt.packageId}
-Status: ${statusLabel}
+Status: ${statusConfig.label}
 Revision: ${receipt.revisionBefore} → ${receipt.revisionAfter ?? 'N/A'}
 Time: ${new Date(receipt.timestamp).toLocaleString()}
 Tools: ${receipt.toolsUsed.join(', ')}
@@ -64,28 +72,32 @@ Agent proposed: Yes`
 
   if (isCollapsed) {
     return (
-      <div className="pointer-events-auto fixed bottom-4 left-4 z-50 rounded-lg border border-white/10 bg-zinc-900/95 px-3 py-2 shadow-xl backdrop-blur">
+      <div className="pointer-events-auto fixed bottom-6 left-6 z-50 rounded-xl border border-white/20 bg-gradient-to-b from-zinc-900/98 to-zinc-950/98 px-4 py-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl">
         <button
-          className="text-xs text-white/60 hover:text-white/90"
+          className="flex items-center gap-2 text-sm text-white/70 transition-colors hover:text-white"
           onClick={() => setIsCollapsed(false)}
           type="button"
         >
-          Scene Receipt (tap to expand)
+          <FileCheck className="h-3.5 w-3.5" />
+          <span className="font-medium">Scene Receipt</span>
         </button>
       </div>
     )
   }
 
   return (
-    <div className="pointer-events-auto fixed bottom-4 left-4 z-50 w-80 rounded-lg border border-white/10 bg-zinc-900/95 p-4 shadow-2xl backdrop-blur">
-      <div className="mb-3 flex items-start justify-between">
+    <div className="pointer-events-auto fixed bottom-6 left-6 z-50 w-80 rounded-2xl border border-white/20 bg-gradient-to-b from-zinc-900/98 to-zinc-950/98 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+      <div className="mb-4 flex items-start justify-between">
         <div>
-          <h3 className="text-sm font-medium text-white">Scene Receipt</h3>
-          <p className="mt-0.5 text-xs text-white/40">Package application record</p>
+          <div className="flex items-center gap-2">
+            <FileCheck className="h-4 w-4 text-white/60" />
+            <h3 className="text-sm font-medium text-white">Scene Receipt</h3>
+          </div>
+          <p className="mt-1 text-xs text-white/50">Package application record</p>
         </div>
         <div className="flex gap-1">
           <button
-            className="rounded p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white/70"
+            className="rounded-lg p-1.5 text-white/50 transition-all hover:bg-white/10 hover:text-white/80"
             onClick={handleCopy}
             title="Copy receipt"
             type="button"
@@ -93,7 +105,7 @@ Agent proposed: Yes`
             {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
           </button>
           <button
-            className="rounded p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white/70"
+            className="rounded-lg p-1.5 text-white/50 transition-all hover:bg-white/10 hover:text-white/80"
             onClick={handleCollapse}
             title="Collapse"
             type="button"
@@ -103,32 +115,44 @@ Agent proposed: Yes`
         </div>
       </div>
 
-      <div className="space-y-2 text-sm">
+      <div className="space-y-3 text-[15px]">
         <div>
-          <span className="text-white/50">Package:</span>{' '}
-          <span className="font-medium text-white">{receipt.packageName}</span>
-          <span className="ml-1 text-xs text-white/30">({receipt.packageId})</span>
+          <span className="text-white/50">Package</span>
+          <div className="mt-1">
+            <span className="font-medium text-white">{receipt.packageName}</span>
+            <span className="ml-1.5 text-xs text-white/40">({receipt.packageId})</span>
+          </div>
         </div>
 
         <div>
-          <span className="text-white/50">Revision:</span>{' '}
-          <span className="font-mono text-xs text-white/70">
-            {receipt.revisionBefore} → {receipt.revisionAfter ?? 'N/A'}
+          <span className="text-white/50">Revision</span>
+          <div className="mt-1">
+            <span className="font-mono text-sm text-white/80">
+              {receipt.revisionBefore} → {receipt.revisionAfter ?? 'N/A'}
+            </span>
+          </div>
+        </div>
+
+        <div>
+          <span className="text-white/50">Time</span>
+          <div className="mt-1">
+            <span className="text-sm text-white/70">
+              {new Date(receipt.timestamp).toLocaleString()}
+            </span>
+          </div>
+        </div>
+
+        <div>
+          <span className="text-white/50">Tools</span>
+          <div className="mt-1">
+            <span className="text-sm text-white/70">{receipt.toolsUsed.join(', ')}</span>
+          </div>
+        </div>
+
+        <div className={`mt-4 rounded-xl border ${statusConfig.border} ${statusConfig.bg} px-3 py-2 text-center backdrop-blur-sm`}>
+          <span className={`text-sm font-medium ${statusConfig.text}`}>
+            {statusConfig.label}
           </span>
-        </div>
-
-        <div>
-          <span className="text-white/50">Time:</span>{' '}
-          <span className="text-xs text-white/70">{new Date(receipt.timestamp).toLocaleString()}</span>
-        </div>
-
-        <div>
-          <span className="text-white/50">Tools:</span>{' '}
-          <span className="text-xs text-white/70">{receipt.toolsUsed.join(', ')}</span>
-        </div>
-
-        <div className={`mt-3 rounded border px-2 py-1.5 text-center text-xs font-medium ${statusColor}`}>
-          {statusLabel}
         </div>
       </div>
     </div>

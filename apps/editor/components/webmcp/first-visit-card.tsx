@@ -43,77 +43,91 @@ export function FirstVisitCard() {
   if (!isVisible) return null
 
   return (
-    <div className="pointer-events-auto fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="relative mx-4 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-white/10 bg-zinc-900/95 p-6 shadow-2xl backdrop-blur">
+    <div className="pointer-events-auto fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-md">
+      <div className="relative mx-4 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/20 bg-gradient-to-b from-zinc-900/98 to-zinc-950/98 p-8 shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl">
         <button
           aria-label="Close"
-          className="absolute top-4 right-4 rounded-lg p-1 text-white/40 transition-colors hover:bg-white/5 hover:text-white/60"
+          className="absolute top-5 right-5 rounded-lg p-1.5 text-white/30 transition-all hover:bg-white/10 hover:text-white/70"
           onClick={handleDismiss}
           type="button"
         >
           <X className="h-4 w-4" />
         </button>
 
-        <p className="text-xs tracking-wide text-white/40 uppercase">Room vibe</p>
-        <h2 className="mt-1 text-xl font-medium text-white">A live 1-bed you restyle with ChatGPT</h2>
-        <p className="mt-2 text-sm leading-relaxed text-white/60">
-          This page is the apartment, already furnished. There is no catalog grid here. ChatGPT
-          holds the tools and restyles with named packages when it can see this site. You walk the
-          room, you confirm, you keep a Scene Receipt.
-        </p>
-
-        <div className="mt-5 space-y-3 text-sm text-white/80">
-          <p>
-            <span className="font-medium text-white">1. Look around.</span> Drag to orbit. Scroll
-            to zoom. This is Version A, walls and all.
-          </p>
-          <p>
-            <span className="font-medium text-white">2. Open this same URL in ChatGPT</span> (in-app
-            browser, Sol or Terra). Not a screenshot. Not a paste into a chat that cannot see the
-            page. You should see Available site tools: inspect, validate, apply, focus, session,
-            receipt.
-          </p>
-          <p>
-            <span className="font-medium text-white">3. Ask it to apply Warm Dusk</span> (evening
-            lamps). Copy the prompt below if you want.
-          </p>
-          <p>
-            <span className="font-medium text-white">4. Confirm or Refuse on this page.</span>{' '}
-            Version A stays. Version B appears next door. Undo is top right. The receipt is what
-            you keep. Nobody checkouts.
+        <div className="mb-6">
+          <p className="text-xs font-medium tracking-wider text-white/40 uppercase">Room vibe</p>
+          <h2 className="mt-2 text-2xl font-light tracking-tight text-white">Restyle with ChatGPT</h2>
+          <p className="mt-3 text-[15px] leading-relaxed text-white/70">
+            Walk through a furnished 1-bedroom apartment. Send ChatGPT inside to apply lighting
+            packages and see instant before-and-after versions.
           </p>
         </div>
 
-        <div className="mt-5 rounded-lg border border-white/10 bg-black/40 p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-xs text-white/40">Paste this in ChatGPT on this page</p>
+        <div className="space-y-4 text-[15px] text-white/80">
+          <div>
+            <span className="font-medium text-white">Look around</span>
+            <p className="mt-1 text-sm text-white/60">
+              Drag to orbit, scroll to zoom. This is Version A.
+            </p>
+          </div>
+          <div>
+            <span className="font-medium text-white">Open this URL in ChatGPT</span>
+            <p className="mt-1 text-sm text-white/60">
+              Use the in-app browser (Sol or Terra). ChatGPT will register six site tools
+              automatically.
+            </p>
+          </div>
+          <div>
+            <span className="font-medium text-white">Ask for Warm Dusk</span>
+            <p className="mt-1 text-sm text-white/60">
+              ChatGPT validates and proposes the lighting package. Copy the starter prompt below.
+            </p>
+          </div>
+          <div>
+            <span className="font-medium text-white">Confirm on this page</span>
+            <p className="mt-1 text-sm text-white/60">
+              Version B appears next door. Undo is top right. Your Scene Receipt stays with you.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-xl border border-white/10 bg-black/50 p-4 backdrop-blur-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-xs font-medium text-white/50">Starter prompt</p>
             <button
-              className="flex items-center gap-1 rounded px-2 py-1 text-xs text-white/50 hover:bg-white/5 hover:text-white/80"
+              className="flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1.5 text-xs font-medium text-white/70 backdrop-blur-sm transition-all hover:bg-white/20 hover:text-white"
               onClick={handleCopy}
               type="button"
             >
-              {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-              {copied ? 'Copied' : 'Copy'}
+              {copied ? (
+                <>
+                  <Check className="h-3 w-3" />
+                  Copied
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3 w-3" />
+                  Copy
+                </>
+              )}
             </button>
           </div>
-          <pre className="whitespace-pre-wrap text-xs leading-relaxed text-white/70">{CHATGPT_PROMPT}</pre>
+          <pre className="whitespace-pre-wrap text-[13px] leading-relaxed text-white/80">{CHATGPT_PROMPT}</pre>
         </div>
 
-        <p className="mt-4 text-xs leading-relaxed text-white/35">
-          Localhost will not show site tools inside ChatGPT. That needs a public https URL. In
-          Chrome you can turn on chrome://flags/#enable-webmcp-testing to see the tools on this
-          tab.
-        </p>
-
-        <div className="mt-5 flex gap-3">
+        <div className="mt-6">
           <button
-            className="flex-1 rounded-lg bg-white/90 px-4 py-2.5 text-sm font-medium text-zinc-900 transition-colors hover:bg-white"
+            className="w-full rounded-xl bg-white px-4 py-3 text-[15px] font-medium text-zinc-900 shadow-lg transition-all hover:bg-white/95 hover:shadow-xl"
             onClick={handleDismiss}
             type="button"
           >
             Show me the room
           </button>
         </div>
+
+        <p className="mt-4 text-xs leading-relaxed text-white/30">
+          Local testing: enable chrome://flags/#enable-webmcp-testing to see tools without ChatGPT.
+        </p>
       </div>
     </div>
   )
@@ -122,7 +136,7 @@ export function FirstVisitCard() {
 export function HowItWorksButton() {
   return (
     <button
-      className="pointer-events-auto rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/60 backdrop-blur transition-colors hover:bg-white/10 hover:text-white/90"
+      className="pointer-events-auto rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/70 shadow-lg backdrop-blur-xl transition-all hover:bg-white/20 hover:text-white hover:shadow-xl"
       onClick={() => window.dispatchEvent(new Event('room-vibe:open-how-it-works'))}
       type="button"
     >
