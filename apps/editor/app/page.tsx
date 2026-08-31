@@ -71,62 +71,10 @@ export default function Home() {
           installedPlugins: sceneData.installedPlugins,
         })
 
-        const updatedScene = useScene.getState()
-        const firstBuilding = Object.values(updatedScene.nodes).find((n) => n && n.type === 'building')
-        if (firstBuilding) {
-          const groundLevel = Object.values(updatedScene.nodes).find(
-            (n) => n && n.type === 'level' && (n as any).level === 0
-          )
-
-          if (groundLevel) {
-            const furniturePackage = PACKAGES.pkg_lived_in_01
-            const nodesToCreate: { node: any; parentId: AnyNodeId }[] = []
-
-            for (const pkgItem of furniturePackage.items) {
-              const catalogItem = CATALOG_ITEMS.find((item) => item.id === pkgItem.catalogId)
-              if (!catalogItem) {
-                console.warn(`[Room vibe] Catalog item not found: ${pkgItem.catalogId}`)
-                continue
-              }
-
-              try {
-                const itemNode = ItemNode.parse({
-                  position: pkgItem.position,
-                  rotation: pkgItem.rotation,
-                  asset: {
-                    id: catalogItem.id,
-                    name: catalogItem.name,
-                    category: catalogItem.category,
-                    thumbnail: catalogItem.thumbnail,
-                    src: catalogItem.src,
-                    floorPlanUrl: catalogItem.floorPlanUrl,
-                    dimensions: catalogItem.dimensions,
-                    offset: catalogItem.offset || [0, 0, 0],
-                    rotation: catalogItem.rotation || [0, 0, 0],
-                    scale: catalogItem.scale || [1, 1, 1],
-                  },
-                })
-
-                nodesToCreate.push({
-                  node: itemNode,
-                  parentId: groundLevel.id as AnyNodeId,
-                })
-              } catch (error) {
-                console.error(`[Room vibe] Failed to parse item ${pkgItem.catalogId}:`, error)
-              }
-            }
-
-            if (nodesToCreate.length > 0) {
-              updatedScene.createNodes(nodesToCreate)
-              console.log(`[Room vibe] Seeded Version A with ${nodesToCreate.length} furniture items`)
-            }
-          }
-        }
-
         clearSceneHistory()
 
-        setIsLoaded(true)
         console.log('[Room vibe] Demo scene loaded:', Object.keys(sceneData.nodes).length, 'nodes')
+        setIsLoaded(true)
       } catch (error) {
         console.error('[Room vibe] Failed to load demo scene:', error)
         const scene = useScene.getState()
@@ -146,6 +94,74 @@ export default function Home() {
 
     return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    if (!isLoaded) return
+
+    const timer = setTimeout(() => {
+      const scene = useScene.getState()
+      const firstBuilding = Object.values(scene.nodes).find((n) => n && n.type === 'building')
+      if (!firstBuilding) {
+        console.warn('[Room vibe] No building found for furniture seed')
+        return
+      }
+
+      const groundLevel = Object.values(scene.nodes).find(
+        (n) => n && n.type === 'level' && (n as any).level === 0
+      )
+
+      if (!groundLevel) {
+        console.warn('[Room vibe] No ground level found for furniture seed')
+        return
+      }
+
+      const furniturePackage = PACKAGES.pkg_lived_in_01
+      const nodesToCreate: { node: any; parentId: AnyNodeId }[] = []
+
+      for (const pkgItem of furniturePackage.items) {
+        const catalogItem = CATALOG_ITEMS.find((item) => item.id === pkgItem.catalogId)
+        if (!catalogItem) {
+          console.warn(`[Room vibe] Catalog item not found: ${pkgItem.catalogId}`)
+          continue
+        }
+
+        try {
+          const itemNode = ItemNode.parse({
+            position: pkgItem.position,
+            rotation: pkgItem.rotation,
+            asset: {
+              id: catalogItem.id,
+              name: catalogItem.name,
+              category: catalogItem.category,
+              thumbnail: catalogItem.thumbnail,
+              src: catalogItem.src,
+              floorPlanUrl: catalogItem.floorPlanUrl,
+              dimensions: catalogItem.dimensions,
+              offset: catalogItem.offset || [0, 0, 0],
+              rotation: catalogItem.rotation || [0, 0, 0],
+              scale: catalogItem.scale || [1, 1, 1],
+            },
+          })
+
+          nodesToCreate.push({
+            node: itemNode,
+            parentId: groundLevel.id as AnyNodeId,
+          })
+        } catch (error) {
+          console.error(`[Room vibe] Failed to parse item ${pkgItem.catalogId}:`, error)
+        }
+      }
+
+      if (nodesToCreate.length > 0) {
+        scene.createNodes(nodesToCreate)
+        console.log(`[Room vibe] Seeded Version A with ${nodesToCreate.length} furniture items`)
+      } else {
+        console.warn('[Room vibe] No furniture items created')
+      }
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [isLoaded])
 
   const handleUndo = () => {
     const temporalState = useScene.temporal?.getState()
