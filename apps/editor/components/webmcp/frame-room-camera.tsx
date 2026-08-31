@@ -8,6 +8,7 @@ import {
   type CameraControlEvent,
   type CameraControlFitSceneEvent,
 } from '@aedifex/core'
+import { snapLevelsToTruePositions } from '@aedifex/viewer'
 import { CameraControls, CameraControlsImpl } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
 import { useEffect, useLayoutEffect, useRef } from 'react'
@@ -170,23 +171,50 @@ export function FrameRoomCamera() {
   }
 
   useLayoutEffect(() => {
-    const pose = initialPose()
-    if (pose) {
-      camera.position.set(pose.position[0], pose.position[1], pose.position[2])
-      camera.lookAt(pose.target[0], pose.target[1], pose.target[2])
-      camera.updateProjectionMatrix()
+    const waitForLevels = () => {
+      return new Promise<boolean>((resolve) => {
+        const checkLevels = () => {
+          const hasLevels = sceneRegistry.byType.level && sceneRegistry.byType.level.size > 0
+          if (hasLevels) {
+            let hasObjects = true
+            sceneRegistry.byType.level.forEach((levelId) => {
+              if (!sceneRegistry.nodes.get(levelId)) {
+                hasObjects = false
+              }
+            })
+            if (hasObjects) {
+              resolve(true)
+              return
+            }
+          }
+          requestAnimationFrame(checkLevels)
+        }
+        checkLevels()
+      })
     }
 
-    if (frameInitial()) return undefined
-    let attempts = 0
-    let frame = 0
-    const retry = () => {
-      attempts += 1
-      if (frameInitial() || attempts > 30) return
+    waitForLevels().then(() => {
+      snapLevelsToTruePositions()
+      console.log('[FrameRoomCamera] Snapped levels to stacked positions')
+      
+      const pose = initialPose()
+      if (pose) {
+        camera.position.set(pose.position[0], pose.position[1], pose.position[2])
+        camera.lookAt(pose.target[0], pose.target[1], pose.target[2])
+        camera.updateProjectionMatrix()
+      }
+
+      if (frameInitial()) return
+      let attempts = 0
+      let frame = 0
+      const retry = () => {
+        attempts += 1
+        if (frameInitial() || attempts > 30) return
+        frame = window.requestAnimationFrame(retry)
+      }
       frame = window.requestAnimationFrame(retry)
-    }
-    frame = window.requestAnimationFrame(retry)
-    return () => window.cancelAnimationFrame(frame)
+    })
+
     // First mount only: this is the empty-sky fix, not a reactive tracker.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
