@@ -1,9 +1,23 @@
+import type { Metadata } from 'next'
 import { Agentation } from 'agentation'
 import { GeistPixelSquare } from 'geist/font/pixel'
 import { Barlow } from 'next/font/google'
 import localFont from 'next/font/local'
 import { ClientBootstrap } from './client-bootstrap'
 import './globals.css'
+
+export const metadata: Metadata = {
+  title: 'Room vibe',
+  description: 'A WebMCP Scene Receipt demo. Send ChatGPT into a live 1-bed apartment.',
+  openGraph: {
+    title: 'Room vibe',
+    description: 'A WebMCP Scene Receipt demo. Send ChatGPT into a live 1-bed apartment.',
+  },
+  twitter: {
+    title: 'Room vibe',
+    card: 'summary_large_image',
+  },
+}
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',

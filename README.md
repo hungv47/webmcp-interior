@@ -1,46 +1,104 @@
 # Room vibe
 
-A WebMCP interior configurator on [Aedifex](https://github.com/TangSY/aedifex). A merchant-locked furniture and lighting package lands on a live 3D apartment. You bring the agent. You walk both rooms. You keep Undo. The agent never checkouts.
+A WebMCP Scene Receipt system on [Aedifex](https://github.com/TangSY/aedifex). Send ChatGPT into a live 1-bed. It cannot restyle until you confirm. The second building is the proof on screen. The Scene Receipt is what you keep.
 
-This is a snapshot for the [OpenAI WebMCP Challenge](https://openai.com/webmcp-challenge/). It is not affiliated with Aedifex or Pascal Group. Do not open upstream PRs against this repository.
+Built for the [OpenAI WebMCP Challenge](https://openai.com/webmcp-challenge/). Aedifex (MIT) provides the 3D engine. Not affiliated with Aedifex or Pascal Group.
 
-Public name is not locked. Repo: `webmcp-interior`.
+**Repository**: `hungv47/webmcp-interior`
 
-## Why WebMCP
+## The Product
 
-A room’s object model is the scene graph (walls, items, lights, collisions), not the DOM. Clicks and screenshots cannot keep a revision, remap wall ids, or write a reversible package. This page registers five tools so an agent can apply a named package as Version B beside untouched Version A.
+**The judged deliverable is the Scene Receipt**, not the 3D apartment. 
 
-This is not photo restyle. It is not a furniture storefront. OpenAI’s showcase already has grocery carts and ateliers for that.
+Room vibe gives the agent 6 WebMCP tools. Every package application waits for human approval via modal. After confirmation (or refusal), a persistent Scene Receipt is minted containing package ID/name, revisions before/after, tools used, timestamp, agent proposed, and confirmed/refused status.
 
-## Tools
+The receipt is:
+- **Persistent** (bottom-left card, doesn't auto-dismiss)
+- **Copyable** (copy icon → plain text)
+- **Tool-readable** (`scene.read_receipt` returns the last receipt)
 
-| Tool | Role |
-|---|---|
-| `scene.inspect` | Floor plan, items, lights, selection, revision. Start here. |
-| `scene.validate_package` | Check a named package. No write. |
-| `scene.apply_package` | Place Version B as a sibling building on the ground. One native Undo. |
-| `scene.focus_comparison` | Point the human at A or B. Does not walk. Does not buy. |
-| `scene.session_state` | Who may write, what is stale. `canCheckout` is always false. |
+The 3D apartment is the substrate for the demo. The confirm modal + Scene Receipt are the judged work.
 
-Named package for the demo: `pkg_warm_dusk_01`.
+## WebMCP Tools
 
-## Run
+| Tool | Role | Read-Only |
+|---|---|---|
+| `scene.inspect` | Floor plan, items, lights, zones, revision | ✓ |
+| `scene.validate_package` | Check a named package (no write) | ✓ |
+| `scene.apply_package` | Apply package as Version B after human modal | |
+| `scene.focus_comparison` | Point camera at A or B | |
+| `scene.session_state` | Session state, `canCheckout` always false | ✓ |
+| `scene.read_receipt` | Read the last Scene Receipt | ✓ |
 
-Needs Node 20+, Bun, and a Chromium 151+ browser with WebMCP (`enable-webmcp-testing`) or ChatGPT’s in-app browser. WebGPU is preferred. The viewer retries WebGL2 if WebGPU is missing.
+**Package for demo**: `pkg_warm_dusk_01` (Warm Dusk lighting)
+
+## How It Works
+
+1. **Inspect**: Agent calls `scene.inspect` to understand Version A
+2. **Validate**: Agent calls `scene.validate_package` with `pkg_warm_dusk_01`
+3. **Propose**: Agent calls `scene.apply_package` — waits at modal
+4. **Human Choice**: 
+   - **Refuse** → No write, red receipt ("Refused by human"), no Version B
+   - **Confirm** → Full apartment clone offset +15m in +X with Warm Dusk lamps, green receipt ("Confirmed by human"), real revisions
+5. **Compare**: Agent calls `scene.focus_comparison` to point camera at A or B
+6. **Receipt**: Agent calls `scene.read_receipt` to read the minted receipt
+7. **Undo** (optional): Human presses Undo to drop Version B
+
+**Version B**: A complete walkable apartment (walls, zones, levels, Warm Dusk lamps), not just lamps in an empty building. This proves the mutation happened. The Scene Receipt is what you keep.
+
+## WebMCP Implementation
+
+Tools register on **`document.modelContext`** (with fallback to `navigator.modelContext`). Each tool has:
+- `execute` (async function) — not `handler`
+- `annotations: { readOnlyHint: true }` for read-only tools
+
+Visible as **Available site tools** in ChatGPT's in-app browser or Chrome with `chrome://flags/#enable-webmcp-testing`.
+
+## Run Locally
+
+Requires Node 20+, and a WebMCP-enabled browser (Chrome 151+ with flag or ChatGPT in-app browser).
 
 ```sh
-bun install
-bun dev
+npm install
+./node_modules/.bin/dotenv -e ./.env.defaults -- ./node_modules/.bin/turbo run dev --filter=editor --env-mode=loose
 ```
 
-Open [http://127.0.0.1:3002/?webmcp=1](http://127.0.0.1:3002/?webmcp=1). Hard-reload once. The AI chat tab must be absent on that query.
+Open **http://127.0.0.1:3002** (no query string required). The demo scene loads automatically, tools register on page load.
 
-Base pin: Aedifex `ebd82837`. MIT. See [NOTICE.md](./NOTICE.md) and [LICENSE](./LICENSE). Upstream README: [README.aedifex.md](./README.aedifex.md).
+**Note**: Root `npm run dev` or `bun dev` will fail on `@aedifex/ifc-converter`. Use the command above to run only the editor app.
 
-## Demo
+## Scene Receipt
 
-Paste [DEMO.md](./DEMO.md) into the agent on that tab. Expected loop: inspect, validate Warm Dusk, apply Version B beside A, you walk both, optional Undo.
+The **Scene Receipt** is a persistent card (bottom left) containing:
+- Package ID and name
+- Revisions before/after
+- Tools used
+- Timestamp
+- Agent proposed: true
+- Confirmed by: "human" | "refused" | "blocked"
+
+**Copyable**: Click the copy icon to copy the receipt as plain text.
+
+**Tool-readable**: `scene.read_receipt` returns the last minted receipt.
+
+This is the judged product.
+
+## Architecture
+
+Built on **Aedifex** (MIT, commit `ebd82837`). Room vibe adds:
+- 6 WebMCP tools (`apps/editor/components/webmcp/webmcp-tools.tsx`)
+- Confirmation modal (`confirmation-modal.tsx`)
+- Scene Receipt component (`scene-receipt.tsx`)
+- Package definitions (`apps/editor/lib/packages.ts`)
+- Hosted consumer UI (`apps/editor/app/page.tsx`)
+
+Aedifex provides the 3D engine, scene graph, and renderer. See [NOTICE.md](./NOTICE.md) and [LICENSE](./LICENSE). Upstream README: [README.aedifex.md](./README.aedifex.md).
+
+## Credits
+
+- **Aedifex**: MIT 3D interior engine by Pascal Group
+- **Room vibe**: WebMCP tools, Scene Receipt, hosted UI
 
 ## License
 
-MIT, matching Aedifex. Corresponding source for this modified snapshot is this repository.
+MIT, matching Aedifex. Source code for this modified snapshot is this repository.

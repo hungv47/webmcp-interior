@@ -1,0 +1,32 @@
+# Netlify configuration for hungv47/webmcp-interior
+# Preview builds only. Production auto-publish is disabled.
+
+[build]
+  # Build the editor app only (Next.js monorepo package)
+  command = "npm install -g turbo && turbo run build --filter=editor"
+  publish = "apps/editor/.next"
+  
+[build.environment]
+  # Use Node 20.x for compatibility with Next.js 16.3.0
+  NODE_VERSION = "20.9.0"
+  # Let Netlify detect Next.js and use @netlify/next runtime
+  NPM_FLAGS = "--legacy-peer-deps"
+
+# Deploy previews for PRs (this is what we want)
+[context.deploy-preview]
+  command = "npm install -g turbo && turbo run build --filter=editor"
+  
+[context.deploy-preview.environment]
+  NODE_ENV = "production"
+  # Preview build, not production
+  NEXT_PUBLIC_ENV = "preview"
+
+# Explicitly disable production auto-publish (manual only)
+[context.production]
+  # This context exists but should not auto-deploy
+  # Set to manual publish in Netlify UI
+  command = "echo 'Production deploys are manual only' && exit 1"
+
+# Branch deploy settings (scene-receipt is preview, not production)
+[context.branch-deploy]
+  command = "npm install -g turbo && turbo run build --filter=editor"

@@ -1,129 +1,227 @@
 'use client'
 
-import { Editor, ItemsPanel } from '@aedifex/editor'
-import { AIChatPanel } from '@aedifex/editor/components/ai'
-import { Bot, Hammer, Layers, Package, Settings } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { BuildTab } from '@/components/build-tab'
-import {
-  CommunityViewerToolbarLeft,
-  CommunityViewerToolbarRight,
-} from '@/components/viewer-toolbar'
-
-// The open-source editor only ships the built-in catalog (no uploaded items),
-// so the Library/Community/Mine source chips and tag filters add nothing —
-// drop them and keep the panel to plain categories.
-function EditorItemsPanel() {
-  return <ItemsPanel showSourceFilter={false} showTagFilters={false} />
-}
-
-const SIDEBAR_TABS = [
-  {
-    id: 'site',
-    label: 'Scene',
-    component: () => null,
-    mobileDefaultSnap: 0.5,
-    mobileIcon: <Layers className="h-5 w-5" />,
-    icon: (
-      <Image
-        alt=""
-        className="h-8 w-8 object-contain"
-        height={32}
-        src="/icons/scene.webp"
-        width={32}
-      />
-    ),
-  },
-  {
-    id: 'build',
-    label: 'Build',
-    component: BuildTab,
-    mobileDefaultSnap: 0.5,
-    mobileIcon: <Hammer className="h-5 w-5" />,
-    icon: (
-      <Image
-        alt=""
-        className="h-8 w-8 object-contain"
-        height={32}
-        src="/icons/build.webp"
-        width={32}
-      />
-    ),
-  },
-  {
-    id: 'ai',
-    label: 'AI',
-    component: AIChatPanel,
-    mobileDefaultSnap: 0.5,
-    mobileIcon: <Bot className="h-5 w-5" />,
-    icon: (
-      <span className="flex h-8 w-8 items-center justify-center">
-        <Bot className="h-6 w-6" />
-      </span>
-    ),
-  },
-  {
-    id: 'items',
-    label: 'Items',
-    component: EditorItemsPanel,
-    mobileDefaultSnap: 0.5,
-    mobileIcon: <Package className="h-5 w-5" />,
-    icon: (
-      <Image
-        alt=""
-        className="h-8 w-8 object-contain"
-        height={32}
-        src="/icons/couch.webp"
-        width={32}
-      />
-    ),
-  },
-  {
-    id: 'settings',
-    label: 'Settings',
-    component: () => null,
-    mobileDefaultSnap: 0.5,
-    mobileIcon: <Settings className="h-5 w-5" />,
-    icon: (
-      <Image
-        alt=""
-        className="h-8 w-8 object-contain"
-        height={32}
-        src="/icons/settings.webp"
-        width={32}
-      />
-    ),
-  },
-]
-
-const PROJECT_ID = 'local-editor'
+import { useEffect, useLayoutEffect, useState } from 'react'
+import { Viewer, useViewer } from '@aedifex/viewer'
+import { useScene, clearSceneHistory, ItemNode, emitter, type AnyNodeId } from '@aedifex/core'
+import { Undo2 } from 'lucide-react'
+import { WebMCPTools } from '@/components/webmcp/webmcp-tools'
+import { WebMCPOrchestrator } from '@/components/webmcp/webmcp-orchestrator'
+import { FirstVisitCard, HowItWorksButton } from '@/components/webmcp/first-visit-card'
+import { NextStepDock } from '@/components/webmcp/next-step-dock'
+import { FrameRoomCamera } from '@/components/webmcp/frame-room-camera'
+import { PACKAGES } from '@/lib/packages'
+import { CATALOG_ITEMS } from '@aedifex/editor'
 
 export default function Home() {
+  const [isLoaded, setIsLoaded] = useState(false)
+  const [canUndo, setCanUndo] = useState(false)
+
+  useLayoutEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('viewer-preferences')
+    }
+  }, [])
+
+  useEffect(() => {
+    const viewer = useViewer.getState()
+    
+    viewer.setSceneTheme('sunset')
+    viewer.setRenderContext('viewer')
+    viewer.setLevelMode('stacked')
+    viewer.setShowZones(false)
+    viewer.setShowGuides(false)
+    
+    const checkAndReapply = () => {
+      const current = useViewer.getState()
+      if (current.renderContext !== 'viewer' || current.levelMode !== 'stacked' || 
+          current.showZones !== false || current.showGuides !== false) {
+        console.log('[Room vibe] Persist rehydrated, reapplying consumer settings')
+        current.setRenderContext('viewer')
+        current.setLevelMode('stacked')
+        current.setShowZones(false)
+        current.setShowGuides(false)
+      }
+    }
+    
+    const timers = [
+      setTimeout(checkAndReapply, 50),
+      setTimeout(checkAndReapply, 100),
+      setTimeout(checkAndReapply, 200),
+    ]
+    
+    return () => timers.forEach(clearTimeout)
+  }, [])
+
+  useEffect(() => {
+    async function loadDemoScene() {
+      try {
+        const response = await fetch('/demos/demo_1.json')
+        const sceneData = await response.json()
+        
+        if (!sceneData.nodes || !sceneData.rootNodeIds) {
+          console.error('[Room vibe] Invalid scene data')
+          setIsLoaded(true)
+          return
+        }
+
+        const scene = useScene.getState()
+        scene.setScene(sceneData.nodes, sceneData.rootNodeIds, {
+          collections: sceneData.collections,
+          materials: sceneData.materials,
+          installedPlugins: sceneData.installedPlugins,
+        })
+
+        clearSceneHistory()
+
+        console.log('[Room vibe] Demo scene loaded:', Object.keys(sceneData.nodes).length, 'nodes')
+        setIsLoaded(true)
+      } catch (error) {
+        console.error('[Room vibe] Failed to load demo scene:', error)
+        const scene = useScene.getState()
+        scene.loadScene()
+        setIsLoaded(true)
+      }
+    }
+
+    loadDemoScene()
+    
+    const interval = setInterval(() => {
+      const temporalState = useScene.temporal?.getState()
+      if (temporalState) {
+        setCanUndo((temporalState.pastStates?.length ?? 0) > 0)
+      }
+    }, 100)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    if (!isLoaded) return
+
+    const timer = setTimeout(() => {
+      const scene = useScene.getState()
+      const firstBuilding = Object.values(scene.nodes).find((n) => n && n.type === 'building')
+      if (!firstBuilding) {
+        console.warn('[Room vibe] No building found for furniture seed')
+        return
+      }
+
+      const groundLevel = Object.values(scene.nodes).find(
+        (n) => n && n.type === 'level' && (n as any).level === 0
+      )
+
+      if (!groundLevel) {
+        console.warn('[Room vibe] No ground level found for furniture seed')
+        return
+      }
+
+      const furniturePackage = PACKAGES.pkg_lived_in_01
+      const nodesToCreate: { node: any; parentId: AnyNodeId }[] = []
+
+      for (const pkgItem of furniturePackage.items) {
+        const catalogItem = CATALOG_ITEMS.find((item) => item.id === pkgItem.catalogId)
+        if (!catalogItem) {
+          console.warn(`[Room vibe] Catalog item not found: ${pkgItem.catalogId}`)
+          continue
+        }
+
+        try {
+          const itemNode = ItemNode.parse({
+            position: pkgItem.position,
+            rotation: pkgItem.rotation,
+            asset: {
+              id: catalogItem.id,
+              name: catalogItem.name,
+              category: catalogItem.category,
+              thumbnail: catalogItem.thumbnail,
+              src: catalogItem.src,
+              floorPlanUrl: catalogItem.floorPlanUrl,
+              dimensions: catalogItem.dimensions,
+              offset: catalogItem.offset || [0, 0, 0],
+              rotation: catalogItem.rotation || [0, 0, 0],
+              scale: catalogItem.scale || [1, 1, 1],
+            },
+          })
+
+          nodesToCreate.push({
+            node: itemNode,
+            parentId: groundLevel.id as AnyNodeId,
+          })
+        } catch (error) {
+          console.error(`[Room vibe] Failed to parse item ${pkgItem.catalogId}:`, error)
+        }
+      }
+
+      if (nodesToCreate.length > 0) {
+        scene.createNodes(nodesToCreate)
+        console.log(`[Room vibe] Seeded Version A with ${nodesToCreate.length} furniture items`)
+      } else {
+        console.warn('[Room vibe] No furniture items created')
+      }
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [isLoaded])
+
+  const handleUndo = () => {
+    const temporalState = useScene.temporal?.getState()
+    if (temporalState && temporalState.undo) {
+      temporalState.undo()
+      console.log('[Room vibe] Undo executed')
+    }
+  }
+
+  if (!isLoaded) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-zinc-950">
+        <div className="text-sm text-zinc-400">Loading room...</div>
+      </div>
+    )
+  }
+
   return (
-    <div className="relative h-screen w-screen">
-      {PROJECT_ID === 'local-editor' && (
-        <div className="pointer-events-none absolute top-14 left-1/2 z-40 -translate-x-1/2">
-          <div className="pointer-events-none flex max-w-[min(92vw,42rem)] flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-border/60 bg-background/90 px-4 py-1.5 text-xs shadow-sm backdrop-blur">
-            <span className="text-muted-foreground">
-              Blank canvas — saved scenes are under Scenes (not this page).
-            </span>
-            <Link
-              className="pointer-events-auto font-medium text-foreground hover:underline"
-              href="/scenes"
-            >
-              Open saved scenes
-            </Link>
-          </div>
-        </div>
-      )}
-      <Editor
-        layoutVersion="v2"
-        projectId={PROJECT_ID}
-        sidebarTabs={SIDEBAR_TABS}
-        viewerToolbarLeft={<CommunityViewerToolbarLeft />}
-        viewerToolbarRight={<CommunityViewerToolbarRight />}
-      />
+    <div className="relative h-screen w-screen overflow-hidden">
+      <div className="pointer-events-none absolute top-6 left-6 z-50 flex items-center gap-3">
+        <h1 className="text-lg font-light tracking-wide text-white/90">Room vibe</h1>
+        <HowItWorksButton />
+      </div>
+
+      <div className="pointer-events-auto absolute top-6 right-6 z-50">
+        <button
+          className={`flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm backdrop-blur transition-colors ${
+            canUndo
+              ? 'text-white/70 hover:bg-white/10 hover:text-white/90'
+              : 'cursor-not-allowed text-white/30'
+          }`}
+          disabled={!canUndo}
+          onClick={handleUndo}
+          title="Undo (Ctrl+Z)"
+          type="button"
+        >
+          <Undo2 className="h-4 w-4" />
+          <span className="font-medium">Undo</span>
+        </button>
+      </div>
+
+      <div className="pointer-events-none absolute top-6 right-6 left-6 z-30 flex justify-center">
+        <a 
+          href="https://github.com/TangSY/aedifex" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="pointer-events-auto rounded-full border border-white/5 bg-black/20 px-3 py-1 text-xs text-white/30 backdrop-blur transition-colors hover:bg-black/30 hover:text-white/50"
+        >
+          Built on Aedifex (MIT)
+        </a>
+      </div>
+
+      <Viewer renderContext="viewer" defaultRender={false}>
+        <FrameRoomCamera />
+      </Viewer>
+
+      <WebMCPTools />
+      <WebMCPOrchestrator />
+      <FirstVisitCard />
+      <NextStepDock />
     </div>
   )
 }

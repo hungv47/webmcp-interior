@@ -528,12 +528,16 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(
   }
   return (
     <Canvas
-      camera={{ position: [50, 50, 50], fov: 50 }}
+      camera={{ position: [2.0, 1.6, 3.0], fov: 50 }}
       className={`transition-colors duration-700 ${
         transparentBackground ? 'bg-transparent' : isDark ? 'bg-[#1f2433]' : 'bg-[#fafafa]'
       }`}
       dpr={[1, maxDpr]}
       frameloop="never"
+      onCreated={({ camera }) => {
+        camera.lookAt(-1.5, 1.0, 1.5)
+        camera.updateProjectionMatrix()
+      }}
       gl={
         ((props: { canvas?: HTMLCanvasElement; powerPreference?: RendererPowerPreference }) => {
           const canvas = props.canvas
@@ -587,7 +591,7 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(
     >
       <ScreenshotRendererBridge />
       <FrameLimiter fps={maxFps} paused={renderPaused} />
-      <ViewerCamera />
+      {!children && <ViewerCamera />}
       <PointerRaycastLayers />
       <GPUDeviceWatcher />
       <ToneMappingExposure />
