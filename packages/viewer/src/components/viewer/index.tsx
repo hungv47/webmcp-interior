@@ -528,14 +528,14 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(
   }
   return (
     <Canvas
-      camera={{ position: [11, 1.6, 3], fov: 50 }}
+      camera={{ position: [2.0, 1.6, 4.5], fov: 50 }}
       className={`transition-colors duration-700 ${
         transparentBackground ? 'bg-transparent' : isDark ? 'bg-[#1f2433]' : 'bg-[#fafafa]'
       }`}
       dpr={[1, maxDpr]}
       frameloop="never"
       onCreated={({ camera }) => {
-        camera.lookAt(9, 1.6, 5)
+        camera.lookAt(-1.5, 1.0, 1.5)
         camera.updateProjectionMatrix()
       }}
       gl={
